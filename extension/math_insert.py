@@ -63,6 +63,44 @@ def log_exception(where):
         pass
 
 
+try:  # pragma: no cover - dependant de LibreOffice
+    import unohelper
+    from com.sun.star.awt import XCallback
+
+    class _Callback(unohelper.Base, XCallback):
+        def __init__(self, fn):
+            self._fn = fn
+
+        def notify(self, data):
+            try:
+                self._fn()
+            except Exception:
+                log_exception("callback")
+except Exception:  # hors LibreOffice
+    _Callback = None
+
+_PENDING = []   # references: LibreOffice ne garde pas les callbacks en vie
+
+
+def run_later(fn):
+    """Execute ``fn`` plus tard sur le fil principal de LibreOffice (AsyncCallback).
+
+    Les appels UNO depuis un autre fil ont fige LibreOffice: tout ce qui doit
+    attendre la fin d'une activation / d'un evenement passe par ici.
+    """
+    try:
+        ctx = uno.getComponentContext()
+        cb = _Callback(fn)
+        _PENDING.append(cb)
+        del _PENDING[:-50]
+        ac = ctx.ServiceManager.createInstanceWithContext("com.sun.star.awt.AsyncCallback", ctx)
+        ac.addCallback(cb, None)
+        return True
+    except Exception:
+        log_exception("run_later")
+        return False
+
+
 def _anchor_as_character():
     """Valeur d'enum TextContentAnchorType.AS_CHARACTER (ou 1 hors UNO)."""
     if uno is not None:
@@ -140,6 +178,7 @@ def insert_math(doc, formula, tab_and_go=True):
             cursor.getText().insertTextContent(cursor, obj, bool(selected))
 
             obj.Model.Formula = formula                 # (5)
+            _fit_object(obj)
 
             if is_guide_on(doc):                                 # (6)
                 _apply_guide(obj, True)
@@ -156,6 +195,26 @@ def insert_math(doc, formula, tab_and_go=True):
     except Exception:
         log_exception("insert_math")
         return obj
+
+
+def _fit_object(obj):
+    """Ajuste la taille de l'objet a celle de la formule et la centre sur la ligne.
+
+    Sans cela Writer garde la taille par defaut de l'objet vide: la formule est
+    ecrasee/etiree (fraction illisible, "vieux rectangle") tant qu'on ne l'a pas
+    ouverte pour la modifier. ``VertOrient`` CENTER aligne la barre de fraction
+    sur le milieu de la ligne de texte.
+    """
+    try:
+        size = obj.EmbeddedObject.getVisualAreaSize(1)   # 1 = DISPLAY_CONTENT
+        if size.Width > 0 and size.Height > 0:
+            obj.Width, obj.Height = size.Width, size.Height
+    except Exception:
+        log_exception("_fit_object/size")
+    try:
+        obj.VertOrient = 2                               # VertOrientation.CENTER
+    except Exception:
+        log_exception("_fit_object/orient")
 
 
 def _enter_undo(doc, title):
@@ -186,23 +245,27 @@ def _cursor_after(controller, obj):
         # ce caractere: on part de son debut et on avance d'un caractere.
         cur = anchor.getText().createTextCursorByRange(anchor.getStart())
         cur.goRight(1, False)
-        controller.getViewCursor().gotoRange(cur.getEnd(), False)
+        try:
+            controller.getViewCursor().gotoRange(cur.getEnd(), False)
+        except Exception:
+            # Un objet est selectionne (fin d'edition de formule): le curseur de
+            # vue est inutilisable. select() d'une plage vide repasse en mode texte.
+            controller.select(cur.getEnd())
+            controller.getViewCursor().gotoRange(cur.getEnd(), False)
     except Exception:
         log_exception("_cursor_after")
 
 
 def _tab_and_go(doc, obj):
-    """Active l'objet formule et saute au premier marqueur ``<?>``.
+    """Active l'objet formule puis, des que l'editeur Math est pret, saute au 1er ``<?>``.
 
-    Limites de l'API (à connaître) :
-    * il n'existe pas d'appel UNO officiel "éditer cet objet" ; on tente
-      ``changeState(UI_ACTIVE)`` sur l'objet OLE, ce qui est ce que fait le
-      double-clic. Selon la version, l'éditeur peut mettre un instant à
-      prendre le focus : le saut peut alors ne pas avoir lieu.
-    * le saut utilise la commande ``.uno:NextMark`` (F4 dans Math). Elle est
-      envoyée au *frame* du document ; si le focus n'est pas encore dans
-      l'éditeur de formule, elle est sans effet (pas d'erreur).
-    Tout est en "meilleur effort" : un échec ne doit jamais gêner l'insertion.
+    L'activation sur place est asynchrone: juste apres ``changeState`` le frame
+    actif est encore Writer, et la touche/commande partait dans le vide (formule
+    ouverte mais curseur au debut, Tab inactif). On laisse donc la boucle
+    d'evenements de LibreOffice terminer l'activation et un fil attend le frame
+    Math (max ~3 s) avant : d'installer Tab / Echap, de lui donner le focus et
+    d'envoyer ``.uno:NextMark`` (F4 dans Math) *a ce frame*.
+    Tout est en "meilleur effort" : un echec ne gene jamais l'insertion.
     """
     try:
         doc.getCurrentController().select(obj)
@@ -210,12 +273,47 @@ def _tab_and_go(doc, obj):
     except Exception:
         log_exception("_tab_and_go/activate")
         return
-    _install_on_active_math()
-    focus_active_frame()          # le focus va a l'editeur de formule, pas a la sidebar
+    run_later(lambda: _finish_tab_and_go(400))
+
+
+def _finish_tab_and_go(attempts):
+    """Attend (sans bloquer LibreOffice) le frame Math actif, puis saute au 1er ``<?>``."""
     try:
-        _dispatch_uno(doc, ".uno:NextMark")
+        ctx = uno.getComponentContext()
+        desktop = ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
+        frame = ctrl = None
+        try:
+            f = desktop.getCurrentFrame()
+            c = f.getController() if f is not None else None
+            if c is not None and is_math_model(c.getModel()):
+                frame, ctrl = f, c
+            elif f is not None:   # formule "sur place": frame Math enfant du frame Writer
+                kids = f.getFrames()
+                for i in range(kids.getCount()):
+                    kc = kids.getByIndex(i).getController()
+                    if kc is not None and is_math_model(kc.getModel()):
+                        frame, ctrl = kids.getByIndex(i), kc
+                        break
+        except Exception:
+            pass
+        if ctrl is None:
+            if attempts > 0:
+                run_later(lambda: _finish_tab_and_go(attempts - 1))
+            else:
+                log_exception("_tab_and_go: editeur Math non active")
+            return
+        try:
+            import keyhandler  # import local : keyhandler importe math_insert
+            keyhandler.install(ctx, ctrl)
+        except Exception:
+            log_exception("_tab_and_go/keyhandler")
+        try:
+            frame.getComponentWindow().setFocus()
+        except Exception:
+            log_exception("_tab_and_go/focus")
+        _dispatch_frame(frame, ".uno:NextMark")
     except Exception:
-        log_exception("_tab_and_go/nextmark")
+        log_exception("_finish_tab_and_go")
 
 
 def focus_active_frame(doc=None):
@@ -519,30 +617,36 @@ def goto_mark(controller, forward=True):
 
 
 def exit_formula(controller):
-    """Quitte l'édition de la formule et remet le curseur juste après l'objet.
+    """Quitte l'edition de la formule et remet le curseur juste apres l'objet.
 
-    Limites : il n'y a pas d'API UNO "fermer l'éditeur". On envoie
-    ``.uno:TerminateInplaceActivation`` au frame Math (équivalent de Échap /
-    clic hors de la formule), puis on lit l'objet resté sélectionné dans
-    Writer pour poser le curseur de vue après lui. Si une étape manque, la
-    formule est quand même refermée ; le focus peut alors devoir être repris
-    d'un clic. Retourne True si la commande a été envoyée.
+    Methode officielle: ``changeState(RUNNING)`` sur l'objet ancre (le meme
+    appel que ``changeState(UI_ACTIVE)`` a l'insertion, dans l'autre sens).
+    Elle est executee en differe (AsyncCallback), apres le retour du gestionnaire de touche:
+    on ne detruit pas le frame Math pendant qu'il traite encore la touche.
+    Retourne True (touche consommee) si on a pu lancer la sortie.
     """
     try:
-        frame = controller.getFrame()
-        writer_frame = frame.getCreator()
-        _dispatch_frame(frame, ".uno:TerminateInplaceActivation")
+        writer_frame = controller.getFrame().getCreator()
+        wctrl = writer_frame.getController()
+        obj = wctrl.getSelection()
+        ext = obj.getExtendedControlOverEmbeddedObject()
     except Exception:
         log_exception("exit_formula")
         return False
-    try:
-        wctrl = writer_frame.getController()
-        sel = wctrl.getSelection()
-        anchor = sel.getAnchor()
-        cur = anchor.getText().createTextCursorByRange(anchor.getEnd())
-        wctrl.getViewCursor().gotoRange(cur.getEnd(), False)
-    except Exception:
-        pass  # la formule est fermée ; le curseur reste où LibreOffice l'a mis
+
+    def _leave():
+        try:
+            ext.changeState(1)                       # EmbedStates.RUNNING
+        except Exception:
+            log_exception("exit_formula/changeState")
+        try:
+            _cursor_after(wctrl, obj)
+            wctrl.getFrame().getComponentWindow().setFocus()
+        except Exception:
+            log_exception("exit_formula/cursor")
+
+    if not run_later(_leave):
+        return False
     return True
 
 

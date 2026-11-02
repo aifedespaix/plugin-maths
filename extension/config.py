@@ -127,6 +127,8 @@ def _clean_ui(ui):
             out["button_height"] = int(min(96, max(24, float(ui["button_height"]))))
         if ui.get("theme") in THEMES:
             out["theme"] = ui["theme"]
+        if "composer" in ui:
+            out["composer"] = bool(ui["composer"])
         gc = ui.get("guide_color")
         if isinstance(gc, str) and _COLOR_RE.match(gc):
             out["guide_color"] = gc.upper()

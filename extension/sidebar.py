@@ -103,6 +103,15 @@ class MathsPanel(unohelper.Base, XSidebarPanel, XUIElement, XToolPanel):
         except Exception:
             _log_exc("sync guide")
 
+    @staticmethod
+    def _composer_enabled():
+        """Bloc formule du panneau: optionnel (ui.composer dans la config), desactive par defaut."""
+        try:
+            import config
+            return bool(config.ui().get("composer", False))
+        except Exception:
+            return False
+
     def _composer_action(self, action_id, values):
         """Bloc formule: ouvre / valide / annule. Retourne True si traite."""
         if self.ui is None:
@@ -121,6 +130,8 @@ class MathsPanel(unohelper.Base, XSidebarPanel, XUIElement, XToolPanel):
                 actions.insert_formula(self.ctx, cid, formula)
             self._after_action(action_id, None)
             return True
+        if not self._composer_enabled():   # par defaut: insertion directe dans la feuille
+            return False
         spec = composer.spec_for(action_id)
         if spec is None:
             return False
@@ -177,10 +188,12 @@ class MathsPanel(unohelper.Base, XSidebarPanel, XUIElement, XToolPanel):
                 h = self.ui.height_for_width(width)
         except Exception:
             _log_exc("height")
-        # min = max = preferred: la deck defile si le contenu depasse.
+        # Preferee = contenu entier; minimum bas: si la deck est plus petite, LibreOffice
+        # accorde moins de hauteur et le panneau defile avec sa propre barre (ui_loader).
+        mn = min(h, 150)
         if uno is None:
-            return (h, h, h)
-        return uno.createUnoStruct("com.sun.star.ui.LayoutSize", h, h, h)
+            return (mn, h, h)
+        return uno.createUnoStruct("com.sun.star.ui.LayoutSize", mn, h, h)
 
     def getMinimalWidth(self):
         return 200

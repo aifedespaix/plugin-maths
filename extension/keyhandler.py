@@ -191,7 +191,15 @@ def _as_char(key_char):
     """KeyChar UNO (str de 1 caractère, ou entier selon la version) -> str."""
     if isinstance(key_char, int):
         return chr(key_char) if key_char else ""
-    return key_char or ""
+    if isinstance(key_char, str):
+        return key_char
+    v = getattr(key_char, "value", None)     # pyuno: uno.Char (attribut .value)
+    if isinstance(v, str):
+        return v
+    try:
+        return str(key_char) if key_char else ""
+    except Exception:
+        return ""
 
 
 class MathsKeyHandler(_UnoBase, XKeyHandler):
@@ -212,7 +220,11 @@ class MathsKeyHandler(_UnoBase, XKeyHandler):
         """Retourne True seulement si l'événement est consommé."""
         try:
             if self.is_math:
-                return self._on_math_key(ev)
+                return self._on_math_key(ev, self.controller)
+            # Formule activee SUR PLACE dans Writer: les touches arrivent ici.
+            math_ctrl = self._active_math_controller()
+            if math_ctrl is not None:
+                return self._on_math_key(ev, math_ctrl)
             return self._on_key(ev)
         except Exception:
             self.buffer = ""
@@ -226,7 +238,20 @@ class MathsKeyHandler(_UnoBase, XKeyHandler):
         _INSTALLED.pop(id(self.controller), None)
 
     # --- vue Math ----------------------------------------------------------
-    def _on_math_key(self, ev):
+    def _active_math_controller(self):
+        """Controller de la formule en cours d'edition sur place, sinon None."""
+        try:
+            # Le frame Math "sur place" est un enfant du frame Writer.
+            frames = self.controller.getFrame().getFrames()
+            for i in range(frames.getCount()):
+                ctrl = frames.getByIndex(i).getController()
+                if ctrl is not None and math_insert.is_math_model(ctrl.getModel()):
+                    return ctrl
+        except Exception:
+            pass
+        return None
+
+    def _on_math_key(self, ev, controller=None):
         """Tab = champ suivant, Maj+Tab = précédent, Échap / Ctrl+Entrée = sortir.
 
         Uniquement quand la formule est dans un document Writer (jamais dans
@@ -234,19 +259,20 @@ class MathsKeyHandler(_UnoBase, XKeyHandler):
         de la formule : on enchaîne naturellement avec le texte. Best effort :
         selon la version, la vue Math peut ne pas relayer toutes les touches.
         """
+        controller = controller or self.controller
         mods, code = ev.Modifiers, ev.KeyCode
-        if not math_insert.math_is_embedded(self.controller):
+        if not math_insert.math_is_embedded(controller):
             return False
         if code == KEY_TAB and not (mods & (MOD_CTRL | MOD_ALT)):
             if mods & MOD_SHIFT:
-                return math_insert.goto_mark(self.controller, forward=False)
-            if math_insert.has_marker(self.controller.getModel()):
-                return math_insert.goto_mark(self.controller, forward=True)
-            return math_insert.exit_formula(self.controller)
+                return math_insert.goto_mark(controller, forward=False)
+            if math_insert.has_marker(controller.getModel()):
+                return math_insert.goto_mark(controller, forward=True)
+            return math_insert.exit_formula(controller)
         if code == KEY_ESCAPE and not mods:
-            return math_insert.exit_formula(self.controller)
+            return math_insert.exit_formula(controller)
         if code == KEY_RETURN and (mods & MOD_CTRL) and not (mods & (MOD_ALT | MOD_SHIFT)):
-            return math_insert.exit_formula(self.controller)
+            return math_insert.exit_formula(controller)
         return False
 
     # --- vue Writer --------------------------------------------------------

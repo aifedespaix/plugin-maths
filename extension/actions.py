@@ -186,7 +186,8 @@ def insert_formula(ctx, action_id, formula):
         math_insert.insert_math(doc, formula, tab_and_go="<?>" in formula)
         if config:
             config.push_recent(action_id)
-        math_insert.focus_active_frame(doc)
+        if "<?>" not in formula:
+            math_insert.focus_active_frame(doc)
     except Exception:
         _log("insert_formula(%s)" % action_id)
 
@@ -207,7 +208,8 @@ def dispatch(ctx, action_id, params=None):
                 return {"text": "Ouvre un document Writer", "ok": None}
             return None
         res = run_action(doc, action_id, params, ctx)
-        if e["kind"] != "verify" and math_insert is not None:
+        # Gabarit: Tab & Go donne le focus a l'editeur de formule (math_insert).
+        if e["kind"] not in ("verify", "template") and math_insert is not None:
             math_insert.focus_active_frame(doc)   # le curseur revient dans le texte
         return res
     except Exception:
