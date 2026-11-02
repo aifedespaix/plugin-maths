@@ -577,7 +577,11 @@ class PanelUI(object):
 
     def _create_container(self):
         smgr = self.ctx.getServiceManager()
-        model = smgr.createInstanceWithContext("com.sun.star.awt.UnoControlContainerModel", self.ctx)
+        # UnoControlDialogModel (et non UnoControlContainerModel): seul lui expose
+        # XNameContainer (insertByName) et XMultiServiceFactory (createInstance)
+        # a pyuno; avec le modele "container" tous les controles echouaient et le
+        # panneau restait vide (la deck se refermait aussitot).
+        model = smgr.createInstanceWithContext("com.sun.star.awt.UnoControlDialogModel", self.ctx)
         ctrl = smgr.createInstanceWithContext("com.sun.star.awt.UnoControlContainer", self.ctx)
         ctrl.setModel(model)
         toolkit = smgr.createInstanceWithContext("com.sun.star.awt.Toolkit", self.ctx)
@@ -651,6 +655,13 @@ class PanelUI(object):
             _set(m, "HelpText", leaf.tooltip)
         self._cmodel.insertByName(leaf.wid, m)
         ctrl = self._container.getControl(leaf.wid)
+        if ctrl is None:
+            # Le conteneur n'a pas cree le controle depuis le modele: on le
+            # construit et on l'ajoute nous-memes (reste embarque dans la sidebar).
+            ctrl = self.ctx.getServiceManager().createInstanceWithContext(
+                m.getPropertyValue("DefaultControl"), self.ctx)
+            ctrl.setModel(m)
+            self._container.addControl(leaf.wid, ctrl)
         leaf.ctrl = ctrl
         if k == "header":
             cb = (lambda e=expander: self._toggle(e))
