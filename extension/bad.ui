@@ -1,1 +1,0 @@
-<interface><object class="GtkWeird" id="x"><child><object class="GtkFoo"/></child></object><object class="GtkBox"><child><object class="GtkSpinner"/></child><child><object class="GtkButton" id="btn_a"><property name="label">A</property></object></child></object></interface>
