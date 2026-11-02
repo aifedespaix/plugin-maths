@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Interface du panneau Maths (Glade / GTK3). Lue par ui_loader.py -->
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <object class="GtkBox" id="root">
+    <property name="visible">True</property>
+    <property name="orientation">vertical</property>
+    <property name="spacing">10</property>
+    <property name="margin">8</property>
+    <child>
+      <object class="GtkBox" id="tools">
+        <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <property name="spacing">6</property>
+        <child>
+          <object class="GtkToggleButton" id="tgl_guide">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="label">Guidage visuel</property>
+            <property name="tooltip_text">Afficher le guidage visuel des formules [ Ctrl+Alt+G ]</property>
+            <property name="height_request">44</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkButton" id="btn_align_equals">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="label">Aligner les =</property>
+            <property name="tooltip_text">Aligner les signes égal [ Ctrl+Alt+E ]</property>
+            <property name="height_request">44</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkExpander" id="sec_0">
+        <property name="visible">True</property>
+        <property name="label">Nombres &amp; Opérations</property>
+        <property name="expanded">True</property>
+        <child>
+          <object class="GtkGrid" id="grid_0">
+            <property name="visible">True</property>
+            <property name="row_spacing">6</property>
+            <property name="column_spacing">6</property>
+            <property name="column_homogeneous">True</property>
+            <child>
+              <object class="GtkButton" id="btn_times">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">×</property>
+                <property name="tooltip_text">Insérer le signe multiplier [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_divide">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">÷</property>
+                <property name="tooltip_text">Insérer le signe diviser [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_plus_minus">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">±</property>
+                <property name="tooltip_text">Insérer plus ou moins [ +- ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_leq">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">≤</property>
+                <property name="tooltip_text">Insérer inférieur ou égal [ &lt;= ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">3</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_geq">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">≥</property>
+                <property name="tooltip_text">Insérer supérieur ou égal [ &gt;= ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_neq">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">≠</property>
+                <property name="tooltip_text">Insérer différent de [ != ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_approx">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">≈</property>
+                <property name="tooltip_text">Insérer environ égal [ ~= ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_pi">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">π</property>
+                <property name="tooltip_text">Insérer pi [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">3</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkExpander" id="sec_1">
+        <property name="visible">True</property>
+        <property name="label">Gabarits</property>
+        <property name="expanded">True</property>
+        <child>
+          <object class="GtkGrid" id="grid_1">
+            <property name="visible">True</property>
+            <property name="row_spacing">6</property>
+            <property name="column_spacing">6</property>
+            <property name="column_homogeneous">True</property>
+            <child>
+              <object class="GtkButton" id="btn_fraction">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">a/b</property>
+                <property name="tooltip_text">Insérer une fraction [ // ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_sqrt">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">√</property>
+                <property name="tooltip_text">Insérer une racine carrée [ sqrt ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_power">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">xⁿ</property>
+                <property name="tooltip_text">Insérer une puissance [ ^^ ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_subscript">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">xₙ</property>
+                <property name="tooltip_text">Insérer un indice [ __ ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_vector">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">→v</property>
+                <property name="tooltip_text">Insérer un vecteur [ vec ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_abs">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">|x|</property>
+                <property name="tooltip_text">Insérer une valeur absolue [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkExpander" id="sec_2">
+        <property name="visible">True</property>
+        <property name="label">Géométrie / Trigonométrie</property>
+        <property name="expanded">False</property>
+        <child>
+          <object class="GtkGrid" id="grid_2">
+            <property name="visible">True</property>
+            <property name="row_spacing">6</property>
+            <property name="column_spacing">6</property>
+            <property name="column_homogeneous">True</property>
+            <child>
+              <object class="GtkButton" id="btn_angle">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">∠</property>
+                <property name="tooltip_text">Insérer un angle [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_triangle">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">△</property>
+                <property name="tooltip_text">Insérer un triangle [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_parallel">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">∥</property>
+                <property name="tooltip_text">Insérer parallèle [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_perpendicular">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">⊥</property>
+                <property name="tooltip_text">Insérer perpendiculaire [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">3</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_degree">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">°</property>
+                <property name="tooltip_text">Insérer le symbole degré [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_sin">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">sin</property>
+                <property name="tooltip_text">Insérer sinus [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_cos">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">cos</property>
+                <property name="tooltip_text">Insérer cosinus [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">2</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_tan">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="label">tan</property>
+                <property name="tooltip_text">Insérer tangente [ clic ]</property>
+                <property name="height_request">44</property>
+              </object>
+              <packing>
+                <property name="left_attach">3</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
