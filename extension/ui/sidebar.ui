@@ -9,36 +9,47 @@
     <property name="spacing">10</property>
     <property name="margin">8</property>
     <child>
-      <object class="GtkBox" id="tools">
+      <object class="GtkGrid" id="tools">
         <property name="visible">True</property>
-        <property name="orientation">vertical</property>
         <property name="spacing">6</property>
         <child>
           <object class="GtkToggleButton" id="tgl_guide">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="label">Guidage visuel</property>
+            <property name="label">Guidage</property>
             <property name="tooltip_text">Afficher ou masquer le guidage visuel [ Ctrl+Alt+G ]</property>
-            <property name="height_request">44</property>
+            <property name="height_request">40</property>
           </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">0</property>
+          </packing>
         </child>
         <child>
           <object class="GtkButton" id="btn_align_equals">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="label">Aligner les =</property>
+            <property name="label">Aligner =</property>
             <property name="tooltip_text">Aligner les signes égal [ Ctrl+Alt+E ]</property>
-            <property name="height_request">44</property>
+            <property name="height_request">40</property>
           </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">0</property>
+          </packing>
         </child>
         <child>
           <object class="GtkButton" id="btn_equation_step">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
-            <property name="label">Ligne suivante</property>
+            <property name="label">Étape +</property>
             <property name="tooltip_text">Passer à l'étape suivante du calcul [ Ctrl+Alt+Return ]</property>
-            <property name="height_request">44</property>
+            <property name="height_request">40</property>
           </object>
+          <packing>
+            <property name="left_attach">0</property>
+            <property name="top_attach">1</property>
+          </packing>
         </child>
         <child>
           <object class="GtkButton" id="btn_open_settings">
@@ -46,8 +57,12 @@
             <property name="can_focus">True</property>
             <property name="label">⚙ Réglages</property>
             <property name="tooltip_text">Ouvrir les réglages [ clic ]</property>
-            <property name="height_request">44</property>
+            <property name="height_request">40</property>
           </object>
+          <packing>
+            <property name="left_attach">1</property>
+            <property name="top_attach">1</property>
+          </packing>
         </child>
       </object>
     </child>
@@ -149,7 +164,7 @@
       <object class="GtkExpander" id="sec_nombres">
         <property name="visible">True</property>
         <property name="label">Nombres &amp; Opérations</property>
-        <property name="expanded">True</property>
+        <property name="expanded">False</property>
         <child>
           <object class="GtkGrid" id="grid_nombres">
             <property name="visible">True</property>

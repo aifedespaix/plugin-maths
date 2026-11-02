@@ -179,7 +179,10 @@ def dispatch(ctx, action_id, params=None):
             if e["kind"] == "verify":
                 return {"text": "Ouvre un document Writer", "ok": None}
             return None
-        return run_action(doc, action_id, params, ctx)
+        res = run_action(doc, action_id, params, ctx)
+        if e["kind"] != "verify" and math_insert is not None:
+            math_insert.focus_active_frame(doc)   # le curseur revient dans le texte
+        return res
     except Exception:
         _log("dispatch(%s)" % action_id)
         return None
