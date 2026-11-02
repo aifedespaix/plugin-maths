@@ -95,15 +95,15 @@ Fonctionne avec PowerShell 5.1 et 7 (Windows, Linux, macOS via `pwsh`). Les entr
 
 ## Publier une release
 
-```bash
-git tag v0.2.0 && git push --tags
-```
+Automatique : chaque push sur `main` (si les tests passent) publie une release GitHub avec `plugin-maths.oxt`.
 
-Le workflow `release.yml` construit l'oxt avec la version du tag, crée la release GitHub avec `plugin-maths.oxt`, puis met à jour `update.xml` (version et URL) sur `main`.
+- Version : celle de `extension/description.xml` si son tag n'existe pas encore (pour un saut mineur/majeur, changez-la à la main) ; sinon dernier tag `vX.Y.Z` avec le patch + 1.
+- Le workflow `release.yml` met ensuite à jour `update.xml` et `description.xml` sur `main` (commit `[skip ci]`, sans relancer de release).
+- Tests : `python3 -m unittest discover -s tests -v` (logique pure, sans LibreOffice).
 
 ## Mise à jour automatique
 
-`description.xml` pointe vers `update.xml` (sur `main`, via raw.githubusercontent.com). LibreOffice le consulte, et propose la nouvelle version dès qu'une release est publiée.
+`description.xml` pointe vers `update.xml` (sur `main`, via raw.githubusercontent.com). LibreOffice le consulte et propose la nouvelle version dès qu'une release est publiée (l'utilisateur confirme ; ce n'est pas silencieux).
 
 Les notes de la release GitHub sont extraites de la section de la version dans `CHANGELOG.md` (à mettre à jour avant de poser le tag) ; `update.xml` reçoit aussi le lien vers cette page (`<release-notes>`), affiché par LibreOffice lors d'une mise à jour.
 

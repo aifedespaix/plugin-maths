@@ -33,6 +33,9 @@ jobs:
           sys.exit(1 if bad else 0)
           PY
 
+      - name: Tests unitaires
+        run: python3 -m unittest discover -s tests -v
+
       - name: Compiler le Python
         run: python3 -m py_compile extension/*.py
 

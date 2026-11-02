@@ -1,79 +1,130 @@
 name: Release
 
+# Une release est publiée à chaque push sur main (après réussite des tests).
+# Version : celle de extension/description.xml si son tag n'existe pas encore
+# (bump manuel majeur/mineur), sinon dernier tag vX.Y.Z avec patch + 1.
 on:
   push:
-    tags: ['v*.*.*']
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tests unitaires
+        run: python3 -m unittest discover -s tests -v
+
   release:
-    runs-on: windows-latest
+    needs: test
+    # Le commit de mise à jour d'update.xml ne doit pas relancer une release.
+    if: ${{ !contains(github.event.head_commit.message, '[skip ci]') }}
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
+      - name: Calculer la version
+        id: ver
+        run: |
+          set -euo pipefail
+          git fetch --tags --force
+          base=$(python3 -c "import re;print(re.search(r'<version\s+value=\"([^\"]+)\"',open('extension/description.xml',encoding='utf-8').read()).group(1))")
+          if ! git rev-parse -q --verify "refs/tags/v$base" >/dev/null; then
+            ver="$base"
+          else
+            last=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sed 's/^v//' | sort -V | tail -n1)
+            top=$(printf '%s\n%s\n' "$base" "$last" | sort -V | tail -n1)
+            IFS=. read -r ma mi pa <<<"$top"
+            ver="$ma.$mi.$((pa+1))"
+          fi
+          echo "Version : $ver"
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+          echo "tag=v$ver" >> "$GITHUB_OUTPUT"
+
       - name: Construire l'oxt
         shell: pwsh
-        run: ./build.ps1 -Version "$('${{ github.ref_name }}'.TrimStart('v'))" -OutDir dist
+        run: ./build.ps1 -Version "${{ steps.ver.outputs.version }}" -OutDir dist
 
-      - name: Extraire les notes depuis CHANGELOG.md
-        shell: pwsh
-        env:
-          TAG: ${{ github.ref_name }}
+      - name: Verifier l'oxt
         run: |
-          $ErrorActionPreference = 'Stop'
-          $ver = $env:TAG.TrimStart('v')
-          $lines = Get-Content -LiteralPath CHANGELOG.md -Encoding UTF8
-          $out = New-Object System.Collections.Generic.List[string]
-          $in = $false
-          foreach ($l in $lines) {
-            if ($l -match '^##\s+\[?' + [regex]::Escape($ver) + '\]?(\s|$)') { $in = $true; continue }
-            if ($in -and $l -match '^##\s') { break }
-            if ($in) { $out.Add($l) }
-          }
-          $body = ($out -join "`n").Trim()
-          if (-not $body) {
-            Write-Warning "Section $ver absente de CHANGELOG.md : notes generiques."
-            $body = "Version $ver. Voir CHANGELOG.md."
-          }
-          [System.IO.File]::WriteAllText((Join-Path $PWD 'release-notes.md'), $body + "`n", (New-Object System.Text.UTF8Encoding($false)))
-          Get-Content release-notes.md
+          python3 - <<'PY'
+          import zipfile
+          z = zipfile.ZipFile('dist/plugin-maths.oxt')
+          names = z.namelist()
+          assert 'META-INF/manifest.xml' in names and 'description.xml' in names
+          assert not any('\\' in n for n in names)
+          assert z.testzip() is None
+          PY
+
+      - name: Notes de release
+        env:
+          VER: ${{ steps.ver.outputs.version }}
+        run: |
+          python3 - <<'PY'
+          import os, re
+          ver = os.environ['VER']
+          out, on = [], False
+          for l in open('CHANGELOG.md', encoding='utf-8').read().splitlines():
+              if re.match(r'^##\s+\[?' + re.escape(ver) + r'\]?(\s|$)', l):
+                  on = True; continue
+              if on and l.startswith('## '):
+                  break
+              if on:
+                  out.append(l)
+          body = '\n'.join(out).strip()
+          open('release-notes.md', 'w', encoding='utf-8').write(body + '\n' if body else '')
+          open(os.environ['GITHUB_ENV'], 'a').write('HAS_NOTES=%s\n' % ('true' if body else 'false'))
+          PY
 
       - name: Creer la release GitHub
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.ver.outputs.tag }}
+          target_commitish: ${{ github.sha }}
           files: dist/plugin-maths.oxt
-          body_path: release-notes.md
+          body_path: ${{ env.HAS_NOTES == 'true' && 'release-notes.md' || '' }}
+          generate_release_notes: ${{ env.HAS_NOTES != 'true' }}
 
-      - name: Mettre a jour update.xml sur main
-        shell: pwsh
+      - name: Mettre a jour update.xml et description.xml sur main
         env:
-          TAG: ${{ github.ref_name }}
+          VER: ${{ steps.ver.outputs.version }}
+          TAG: ${{ steps.ver.outputs.tag }}
+          REPO: ${{ github.repository }}
         run: |
-          $ErrorActionPreference = 'Stop'
-          $ver = $env:TAG.TrimStart('v')
-          $url = "https://github.com/${{ github.repository }}/releases/download/$env:TAG/plugin-maths.oxt"
+          set -euo pipefail
           git fetch origin main
           git checkout -B main origin/main
-          $enc = New-Object System.Text.UTF8Encoding($false)
-          $p = Join-Path $PWD 'update.xml'
-          $u = [System.IO.File]::ReadAllText($p)
-          $u = [regex]::Replace($u, '(<version\s+value=")[^"]*(")', "`${1}$ver`${2}")
-          $u = [regex]::Replace($u, '(<update-download>\s*<src\s+xlink:href=")[^"]*(")', "`${1}$url`${2}")
-          $notes = "https://github.com/${{ github.repository }}/releases/tag/$env:TAG"
-          $u = [regex]::Replace($u, '(<release-notes>\s*<src\s+lang="fr"\s+xlink:href=")[^"]*(")', "`${1}$notes`${2}")
-          [System.IO.File]::WriteAllText($p, $u, $enc)
+          python3 - <<'PY'
+          import os, re
+          ver, tag, repo = os.environ['VER'], os.environ['TAG'], os.environ['REPO']
+          def sub(path, pat, rep):
+              s = open(path, encoding='utf-8').read()
+              n = re.sub(pat, lambda m: m.group(1) + rep + m.group(2), s, count=1)
+              open(path, 'w', encoding='utf-8', newline='').write(n)
+          vp = r'(<version\s+value=")[^"]*(")'
+          sub('extension/description.xml', vp, ver)
+          sub('update.xml', vp, ver)
+          sub('update.xml', r'(<update-download>\s*<src\s+xlink:href=")[^"]*(")',
+              'https://github.com/%s/releases/download/%s/plugin-maths.oxt' % (repo, tag))
+          sub('update.xml', r'(<release-notes>\s*<src\s+lang="fr"\s+xlink:href=")[^"]*(")',
+              'https://github.com/%s/releases/tag/%s' % (repo, tag))
+          PY
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add update.xml
-          git diff --cached --quiet
-          if ($LASTEXITCODE -eq 0) {
-            Write-Host 'update.xml deja a jour, rien a commiter.'
-          } else {
-            git commit -m "chore: update.xml -> $ver [skip ci]"
+          git add update.xml extension/description.xml
+          if git diff --cached --quiet; then
+            echo 'Deja a jour.'
+          else
+            git commit -m "chore: release $VER [skip ci]"
             git push origin HEAD:main
-            if ($LASTEXITCODE -ne 0) { throw 'git push a echoue' }
-          }
+          fi
