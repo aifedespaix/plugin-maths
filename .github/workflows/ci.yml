@@ -50,6 +50,8 @@ jobs:
           assert 'META-INF/manifest.xml' in names, 'META-INF/manifest.xml absent'
           assert not any('\\' in n for n in names), 'separateur antislash dans une entree'
           assert z.testzip() is None, 'zip corrompu'
+          for need in ('icons/icon-42.png', 'icons/deck-26.png', 'description.xml'):
+              assert need in names, need + ' absent'
           PY
 
       - uses: actions/upload-artifact@v4

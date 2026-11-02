@@ -7,10 +7,10 @@
       <node oor:name="MathsDeck" oor:op="replace">
         <prop oor:name="Title" oor:type="xs:string"><value xml:lang="fr">Maths</value></prop>
         <prop oor:name="Id" oor:type="xs:string"><value>MathsDeck</value></prop>
-        <prop oor:name="IconURL" oor:type="xs:string"><value></value></prop>
-        <prop oor:name="HighContrastIconURL" oor:type="xs:string"><value></value></prop>
-        <prop oor:name="TitleBarIconURL" oor:type="xs:string"><value></value></prop>
-        <prop oor:name="HighContrastTitleBarIconURL" oor:type="xs:string"><value></value></prop>
+        <prop oor:name="IconURL" oor:type="xs:string"><value>%origin%/icons/deck-26.png</value></prop>
+        <prop oor:name="HighContrastIconURL" oor:type="xs:string"><value>%origin%/icons/deck-26-hc.png</value></prop>
+        <prop oor:name="TitleBarIconURL" oor:type="xs:string"><value>%origin%/icons/deck-26.png</value></prop>
+        <prop oor:name="HighContrastTitleBarIconURL" oor:type="xs:string"><value>%origin%/icons/deck-26-hc.png</value></prop>
         <prop oor:name="Context" oor:type="xs:string"><value>any, any</value></prop>
         <prop oor:name="OrderIndex" oor:type="xs:int"><value>10000</value></prop>
         <prop oor:name="ContextList">

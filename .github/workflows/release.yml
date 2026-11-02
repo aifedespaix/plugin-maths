@@ -19,11 +19,34 @@ jobs:
         shell: pwsh
         run: ./build.ps1 -Version "$('${{ github.ref_name }}'.TrimStart('v'))" -OutDir dist
 
+      - name: Extraire les notes depuis CHANGELOG.md
+        shell: pwsh
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ver = $env:TAG.TrimStart('v')
+          $lines = Get-Content -LiteralPath CHANGELOG.md -Encoding UTF8
+          $out = New-Object System.Collections.Generic.List[string]
+          $in = $false
+          foreach ($l in $lines) {
+            if ($l -match '^##\s+\[?' + [regex]::Escape($ver) + '\]?(\s|$)') { $in = $true; continue }
+            if ($in -and $l -match '^##\s') { break }
+            if ($in) { $out.Add($l) }
+          }
+          $body = ($out -join "`n").Trim()
+          if (-not $body) {
+            Write-Warning "Section $ver absente de CHANGELOG.md : notes generiques."
+            $body = "Version $ver. Voir CHANGELOG.md."
+          }
+          [System.IO.File]::WriteAllText((Join-Path $PWD 'release-notes.md'), $body + "`n", (New-Object System.Text.UTF8Encoding($false)))
+          Get-Content release-notes.md
+
       - name: Creer la release GitHub
         uses: softprops/action-gh-release@v2
         with:
           files: dist/plugin-maths.oxt
-          generate_release_notes: true
+          body_path: release-notes.md
 
       - name: Mettre a jour update.xml sur main
         shell: pwsh
@@ -39,9 +62,9 @@ jobs:
           $p = Join-Path $PWD 'update.xml'
           $u = [System.IO.File]::ReadAllText($p)
           $u = [regex]::Replace($u, '(<version\s+value=")[^"]*(")', "`${1}$ver`${2}")
-          $u = [regex]::Replace($u, '(<version>)[^<]*(</version>)', "`${1}$ver`${2}")
-          $u = [regex]::Replace($u, '(<src\s+href=")[^"]*(")', "`${1}$url`${2}")
-          $u = [regex]::Replace($u, '(<src>)[^<]*(</src>)', "`${1}$url`${2}")
+          $u = [regex]::Replace($u, '(<update-download>\s*<src\s+xlink:href=")[^"]*(")', "`${1}$url`${2}")
+          $notes = "https://github.com/${{ github.repository }}/releases/tag/$env:TAG"
+          $u = [regex]::Replace($u, '(<release-notes>\s*<src\s+lang="fr"\s+xlink:href=")[^"]*(")', "`${1}$notes`${2}")
           [System.IO.File]::WriteAllText($p, $u, $enc)
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'

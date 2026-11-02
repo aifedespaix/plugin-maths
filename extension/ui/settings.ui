@@ -1,0 +1,1285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Écran de réglages (Glade / GTK3). Lu par ui_loader.load_ui, piloté par settings.py.
+     Une case chk_<id> par action; un champ ent_shortcut_<id> pour les actions déclenchables au clavier. -->
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <object class="GtkBox" id="root">
+    <property name="visible">True</property>
+    <property name="orientation">vertical</property>
+    <property name="spacing">8</property>
+    <property name="margin">10</property>
+    <child>
+      <object class="GtkNotebook" id="nb_settings">
+        <property name="visible">True</property>
+        <child>
+          <object class="GtkBox" id="page_profil">
+            <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">10</property>
+            <property name="margin">8</property>
+            <child>
+              <object class="GtkLabel" id="lbl_profil_title">
+                <property name="visible">True</property>
+                <property name="label">Choisis un profil de départ. Tu pourras ensuite activer ou cacher chaque outil.</property>
+                <property name="xalign">0</property>
+                <property name="wrap">True</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkComboBoxText" id="cmb_preset">
+                <property name="visible">True</property>
+                <property name="tooltip_text">Profil de départ</property>
+                <items>
+                  <item id="0">Simple</item>
+                  <item id="1">Standard</item>
+                  <item id="2">Complet</item>
+                </items>
+              </object>
+            </child>
+            <child>
+              <object class="GtkButton" id="btn_settings_preset">
+                <property name="visible">True</property>
+                <property name="label">Appliquer ce profil aux cases</property>
+                <property name="tooltip_text">Coche les outils du profil choisi (rien n'est enregistré avant « Enregistrer »)</property>
+                <property name="height_request">44</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lbl_preset_desc">
+                <property name="visible">True</property>
+                <property name="label"></property>
+                <property name="xalign">0</property>
+                <property name="wrap">True</property>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel" id="tab_profil">
+            <property name="visible">True</property>
+            <property name="label">Profil</property>
+            <property name="xalign">0</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkGrid" id="page_0">
+            <property name="visible">True</property>
+            <property name="row_spacing">4</property>
+            <property name="column_spacing">12</property>
+            <property name="margin">8</property>
+            <child>
+              <object class="GtkLabel" id="lbl_h_act_0">
+                <property name="visible">True</property>
+                <property name="label">Actif</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lbl_h_sc_0">
+                <property name="visible">True</property>
+                <property name="label">Raccourci</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_guide">
+                <property name="visible">True</property>
+                <property name="label">Guidage visuel</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_guide">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_align_equals">
+                <property name="visible">True</property>
+                <property name="label">Aligner les =</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_align_equals">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_equation_step">
+                <property name="visible">True</property>
+                <property name="label">Étape d'équation (ligne suivante)</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_equation_step">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_times">
+                <property name="visible">True</property>
+                <property name="label">Multiplication ×</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_times">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_divide">
+                <property name="visible">True</property>
+                <property name="label">Division ÷</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_divide">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_plus_minus">
+                <property name="visible">True</property>
+                <property name="label">Plus ou moins ±</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">6</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_plus_minus">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">6</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_leq">
+                <property name="visible">True</property>
+                <property name="label">Inférieur ou égal ≤</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">7</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_leq">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">7</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_geq">
+                <property name="visible">True</property>
+                <property name="label">Supérieur ou égal ≥</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">8</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_geq">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">8</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_neq">
+                <property name="visible">True</property>
+                <property name="label">Différent ≠</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">9</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_neq">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">9</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_approx">
+                <property name="visible">True</property>
+                <property name="label">Environ égal ≈</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">10</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_approx">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">10</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_pi">
+                <property name="visible">True</property>
+                <property name="label">Nombre π</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">11</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_pi">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">11</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel" id="tab_0">
+            <property name="visible">True</property>
+            <property name="label">Outils</property>
+            <property name="xalign">0</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkGrid" id="page_1">
+            <property name="visible">True</property>
+            <property name="row_spacing">4</property>
+            <property name="column_spacing">12</property>
+            <property name="margin">8</property>
+            <child>
+              <object class="GtkLabel" id="lbl_h_act_1">
+                <property name="visible">True</property>
+                <property name="label">Actif</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lbl_h_sc_1">
+                <property name="visible">True</property>
+                <property name="label">Raccourci</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_fraction">
+                <property name="visible">True</property>
+                <property name="label">Fraction</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_fraction">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_sqrt">
+                <property name="visible">True</property>
+                <property name="label">Racine carrée</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_sqrt">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_power">
+                <property name="visible">True</property>
+                <property name="label">Puissance</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_power">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_subscript">
+                <property name="visible">True</property>
+                <property name="label">Indice</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_subscript">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_vector">
+                <property name="visible">True</property>
+                <property name="label">Vecteur</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_vector">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_abs">
+                <property name="visible">True</property>
+                <property name="label">Valeur absolue</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">6</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_abs">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">6</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_system">
+                <property name="visible">True</property>
+                <property name="label">Système d'équations</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">7</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_system">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">7</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_integral">
+                <property name="visible">True</property>
+                <property name="label">Intégrale</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">8</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_integral">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">8</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_sum">
+                <property name="visible">True</property>
+                <property name="label">Somme</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">9</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_sum">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">9</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_limit">
+                <property name="visible">True</property>
+                <property name="label">Limite</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">10</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_limit">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">10</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_matrix">
+                <property name="visible">True</property>
+                <property name="label">Matrice 2×2</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">11</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_matrix">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">11</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_sci_notation">
+                <property name="visible">True</property>
+                <property name="label">Notation scientifique</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">12</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_sci_notation">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">12</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_interval">
+                <property name="visible">True</property>
+                <property name="label">Intervalle [a ; b]</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">13</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_interval">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">13</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel" id="tab_1">
+            <property name="visible">True</property>
+            <property name="label">Gabarits</property>
+            <property name="xalign">0</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkGrid" id="page_2">
+            <property name="visible">True</property>
+            <property name="row_spacing">4</property>
+            <property name="column_spacing">12</property>
+            <property name="margin">8</property>
+            <child>
+              <object class="GtkLabel" id="lbl_h_act_2">
+                <property name="visible">True</property>
+                <property name="label">Actif</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lbl_h_sc_2">
+                <property name="visible">True</property>
+                <property name="label">Raccourci</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_angle">
+                <property name="visible">True</property>
+                <property name="label">Angle</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_angle">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_triangle">
+                <property name="visible">True</property>
+                <property name="label">Triangle</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_triangle">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_parallel">
+                <property name="visible">True</property>
+                <property name="label">Parallèles</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_parallel">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_perpendicular">
+                <property name="visible">True</property>
+                <property name="label">Perpendiculaires</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_perpendicular">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_degree">
+                <property name="visible">True</property>
+                <property name="label">Degré °</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_degree">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_sin">
+                <property name="visible">True</property>
+                <property name="label">Sinus</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">6</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_sin">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">6</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_cos">
+                <property name="visible">True</property>
+                <property name="label">Cosinus</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">7</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_cos">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">7</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_tan">
+                <property name="visible">True</property>
+                <property name="label">Tangente</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">8</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_tan">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">8</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_set_in">
+                <property name="visible">True</property>
+                <property name="label">Appartient ∈</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">9</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_set_in">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">9</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_set_union">
+                <property name="visible">True</property>
+                <property name="label">Union ∪</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">10</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_set_union">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">10</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_set_inter">
+                <property name="visible">True</property>
+                <property name="label">Intersection ∩</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">11</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_set_inter">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">11</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_set_R">
+                <property name="visible">True</property>
+                <property name="label">Réels ℝ</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">12</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_set_R">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">12</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_set_N">
+                <property name="visible">True</property>
+                <property name="label">Entiers naturels ℕ</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">13</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_set_N">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">13</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_set_Z">
+                <property name="visible">True</property>
+                <property name="label">Entiers relatifs ℤ</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">14</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkEntry" id="ent_shortcut_set_Z">
+                <property name="visible">True</property>
+                <property name="width_chars">14</property>
+                <property name="tooltip_text">Séquence tapée (ex. //) ou combinaison (ex. Ctrl+Alt+G). Vide = pas de raccourci.</property>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">14</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel" id="tab_2">
+            <property name="visible">True</property>
+            <property name="label">Géométrie</property>
+            <property name="xalign">0</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkGrid" id="page_3">
+            <property name="visible">True</property>
+            <property name="row_spacing">4</property>
+            <property name="column_spacing">12</property>
+            <property name="margin">8</property>
+            <child>
+              <object class="GtkLabel" id="lbl_h_act_3">
+                <property name="visible">True</property>
+                <property name="label">Actif</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_tpl_equation_steps">
+                <property name="visible">True</property>
+                <property name="label">Modèle : résoudre une équation</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_tpl_probleme">
+                <property name="visible">True</property>
+                <property name="label">Modèle : problème</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_tpl_geometrie">
+                <property name="visible">True</property>
+                <property name="label">Modèle : géométrie</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_tpl_fonction">
+                <property name="visible">True</property>
+                <property name="label">Modèle : fonction (tableau)</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">4</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_tpl_calcul_litteral">
+                <property name="visible">True</property>
+                <property name="label">Modèle : calcul littéral</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">5</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_tpl_propriete">
+                <property name="visible">True</property>
+                <property name="label">Modèle : propriété</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">6</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkCheckButton" id="chk_verify">
+                <property name="visible">True</property>
+                <property name="label">Vérifier une égalité</property>
+                <property name="height_request">32</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">7</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel" id="tab_3">
+            <property name="visible">True</property>
+            <property name="label">Modèles</property>
+            <property name="xalign">0</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkGrid" id="page_affichage">
+            <property name="visible">True</property>
+            <property name="row_spacing">8</property>
+            <property name="column_spacing">12</property>
+            <property name="margin">8</property>
+            <child>
+              <object class="GtkLabel" id="lbl_aff_0">
+                <property name="visible">True</property>
+                <property name="label">Thème</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkComboBoxText" id="cmb_theme">
+                <property name="visible">True</property>
+                <items>
+                  <item id="0">Clair</item>
+                  <item id="1">Doux</item>
+                  <item id="2">Contraste élevé</item>
+                </items>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lbl_aff_1">
+                <property name="visible">True</property>
+                <property name="label">Taille du panneau</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkComboBoxText" id="cmb_scale">
+                <property name="visible">True</property>
+                <items>
+                  <item id="0">80 %</item>
+                  <item id="1">100 %</item>
+                  <item id="2">120 %</item>
+                  <item id="3">140 %</item>
+                  <item id="4">160 %</item>
+                </items>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lbl_aff_2">
+                <property name="visible">True</property>
+                <property name="label">Hauteur des boutons</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkComboBoxText" id="cmb_button_height">
+                <property name="visible">True</property>
+                <items>
+                  <item id="0">Petite (36)</item>
+                  <item id="1">Normale (44)</item>
+                  <item id="2">Grande (52)</item>
+                  <item id="3">Très grande (60)</item>
+                </items>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">2</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkLabel" id="lbl_aff_3">
+                <property name="visible">True</property>
+                <property name="label">Couleur du guidage</property>
+                <property name="xalign">0</property>
+              </object>
+              <packing>
+                <property name="left_attach">0</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkComboBoxText" id="cmb_guide_color">
+                <property name="visible">True</property>
+                <items>
+                  <item id="0">Jaune clair</item>
+                  <item id="1">Bleu clair</item>
+                  <item id="2">Vert clair</item>
+                  <item id="3">Rose clair</item>
+                  <item id="4">Gris clair</item>
+                </items>
+              </object>
+              <packing>
+                <property name="left_attach">1</property>
+                <property name="top_attach">3</property>
+              </packing>
+            </child>
+          </object>
+        </child>
+        <child type="tab">
+          <object class="GtkLabel" id="tab_affichage">
+            <property name="visible">True</property>
+            <property name="label">Affichage</property>
+            <property name="xalign">0</property>
+          </object>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkLabel" id="lbl_settings_conflicts">
+        <property name="visible">True</property>
+        <property name="label"></property>
+        <property name="xalign">0</property>
+        <property name="wrap">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkLabel" id="lbl_settings_status">
+        <property name="visible">True</property>
+        <property name="label"></property>
+        <property name="xalign">0</property>
+        <property name="wrap">True</property>
+      </object>
+    </child>
+    <child>
+      <object class="GtkBox" id="box_settings_buttons">
+        <property name="visible">True</property>
+        <property name="orientation">horizontal</property>
+        <property name="spacing">8</property>
+        <property name="homogeneous">True</property>
+        <child>
+          <object class="GtkButton" id="btn_settings_save">
+            <property name="visible">True</property>
+            <property name="label">Enregistrer</property>
+            <property name="tooltip_text">Enregistre les réglages; le panneau se met à jour tout seul</property>
+            <property name="height_request">44</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkButton" id="btn_settings_reset">
+            <property name="visible">True</property>
+            <property name="label">Tout remettre par défaut</property>
+            <property name="tooltip_text">Efface tes réglages personnels et revient au profil standard</property>
+            <property name="height_request">44</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkButton" id="btn_settings_close">
+            <property name="visible">True</property>
+            <property name="label">Fermer</property>
+            <property name="tooltip_text">Ferme cette fenêtre</property>
+            <property name="height_request">44</property>
+          </object>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

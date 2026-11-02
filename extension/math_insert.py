@@ -15,15 +15,44 @@ try:  # pragma: no cover - dépend de LibreOffice
 except ImportError:  # hors LibreOffice
     uno = None
 
+try:  # config.py est écrit à part : repli sur les valeurs par défaut si absent
+    import config
+except Exception:  # ImportError ou erreur dans config.py
+    config = None
+
 # CLSID de l'objet "Formule" (LibreOffice Math) embarqué dans Writer.
 MATH_CLSID = "078B7ABA-54FC-457F-8551-6147e776a997"
 MARKER = "<?>"                    # champ vide StarMath (sauté avec F4)
 GUIDE_PROP = "MathsGuide"         # propriété utilisateur du document
 GUIDE_COLOR = 0xFFF3C4            # fond clair du guidage visuel
 AS_CHARACTER = 1                  # TextContentAnchorType.AS_CHARACTER (valeur de l'enum)
+PARAGRAPH_BREAK = 0               # com.sun.star.text.ControlCharacter.PARAGRAPH_BREAK
 EMBED_UI_ACTIVE = 3               # com.sun.star.embed.EmbedStates.UI_ACTIVE
 PROPERTY_REMOVABLE = 128          # com.sun.star.beans.PropertyAttribute.REMOVABLE
 HUNDREDTH_MM_PER_PT = 35.28       # 1 pt = 35,28 centièmes de mm
+
+
+def parse_color(text, default=GUIDE_COLOR):
+    """"#RRGGBB" (ou entier) -> entier 0xRRGGBB ; ``default`` si invalide (pur)."""
+    try:
+        if isinstance(text, int):
+            return text & 0xFFFFFF
+        t = str(text).strip().lstrip("#")
+        if len(t) != 6:
+            return default
+        return int(t, 16)
+    except Exception:
+        return default
+
+
+def guide_color():
+    """Couleur du guidage lue dans config.ui()["guide_color"] (repli : jaune clair)."""
+    try:
+        if config is not None:
+            return parse_color(config.ui().get("guide_color"), GUIDE_COLOR)
+    except Exception:
+        pass
+    return GUIDE_COLOR
 
 
 def log_exception(where):
@@ -92,30 +121,71 @@ def insert_math(doc, formula, tab_and_go=True):
     Retourne l'objet inséré, ou ``None`` en cas d'échec (l'erreur est loggée,
     jamais propagée : ce code est appelé depuis le clavier).
     """
+    obj = None
+    undo = None
     try:
         controller = doc.getCurrentController()
         cursor = controller.getViewCursor()                      # (1)
         selected = "" if cursor.isCollapsed() else cursor.getString()
         formula = fill_first_marker(formula, selected)
 
-        obj = doc.createInstance("com.sun.star.text.TextEmbeddedObject")   # (2)
-        obj.CLSID = MATH_CLSID                                   # (3)
-        obj.AnchorType = _anchor_as_character()
+        # Un seul Ctrl+Z annule toute l'insertion (sélection remplacée comprise).
+        undo = _enter_undo(doc, "Insérer une formule")
+        try:
+            obj = doc.createInstance("com.sun.star.text.TextEmbeddedObject")   # (2)
+            obj.CLSID = MATH_CLSID                               # (3)
+            obj.AnchorType = _anchor_as_character()
 
-        # (4) True = remplace la sélection éventuelle
-        cursor.getText().insertTextContent(cursor, obj, bool(selected))
+            # (4) True = remplace la sélection éventuelle
+            cursor.getText().insertTextContent(cursor, obj, bool(selected))
 
-        obj.EmbeddedObject.Formula = formula                     # (5)
+            obj.EmbeddedObject.Formula = formula                 # (5)
 
-        if is_guide_on(doc):                                     # (6)
-            _apply_guide(obj, True)
+            if is_guide_on(doc):                                 # (6)
+                _apply_guide(obj, True)
+        finally:
+            _leave_undo(undo)
+
+        # Le curseur de vue reprend place juste APRÈS la formule : si Tab & Go
+        # échoue, l'élève peut quand même continuer à écrire à la suite.
+        _cursor_after(controller, obj)
 
         if tab_and_go and MARKER in formula:                     # (7)
             _tab_and_go(doc, obj)
         return obj
     except Exception:
         log_exception("insert_math")
+        return obj
+
+
+def _enter_undo(doc, title):
+    """Ouvre un contexte d'annulation ; renvoie le gestionnaire (ou None)."""
+    try:
+        undo = doc.getUndoManager()
+        undo.enterUndoContext(title)
+        return undo
+    except Exception:
+        log_exception("_enter_undo")
         return None
+
+
+def _leave_undo(undo):
+    if undo is None:
+        return
+    try:
+        undo.leaveUndoContext()
+    except Exception:
+        log_exception("_leave_undo")
+
+
+def _cursor_after(controller, obj):
+    """Place le curseur de vue juste après l'objet ancré comme caractère."""
+    try:
+        anchor = obj.getAnchor()
+        cur = anchor.getText().createTextCursorByRange(anchor.getEnd())
+        controller.getViewCursor().gotoRange(cur.getEnd(), False)
+    except Exception:
+        log_exception("_cursor_after")
 
 
 def _tab_and_go(doc, obj):
@@ -137,10 +207,29 @@ def _tab_and_go(doc, obj):
     except Exception:
         log_exception("_tab_and_go/activate")
         return
+    _install_on_active_math()
     try:
         _dispatch_uno(doc, ".uno:NextMark")
     except Exception:
         log_exception("_tab_and_go/nextmark")
+
+
+def _install_on_active_math():
+    """Installe le KeyHandler (Tab / Échap) sur la vue Math qui vient de s'activer.
+
+    OnViewCreated n'est pas garanti pour une formule activée sur place ; on
+    complète donc ici, au meilleur effort, avec le frame actif du bureau.
+    """
+    try:
+        import keyhandler  # import local : keyhandler importe math_insert
+        ctx = uno.getComponentContext()
+        desktop = ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
+        frame = desktop.getCurrentFrame()
+        ctrl = frame.getController() if frame is not None else None
+        if ctrl is not None and is_math_model(ctrl.getModel()):
+            keyhandler.install(ctx, ctrl)
+    except Exception:
+        log_exception("_install_on_active_math")
 
 
 def _dispatch_uno(doc, command):
@@ -178,7 +267,7 @@ def _apply_guide(obj, enabled):
     """Colore (ou décolore) le fond d'un objet formule."""
     try:
         if enabled:
-            obj.BackColor = GUIDE_COLOR
+            obj.BackColor = guide_color()
             obj.BackTransparent = False
         else:
             obj.BackTransparent = True
@@ -331,3 +420,196 @@ def _set_decimal_tab(para, pos):
     para.ParaTabStops = (tab,)
     if not para.getString().startswith("\t"):
         para.getText().insertString(para.getStart(), "\t", False)
+
+
+# --------------------------------------------------------------------------
+# Synchronisation du guidage (sidebar)
+# --------------------------------------------------------------------------
+def _current_writer_doc(ctx):
+    """Document Writer actif, ou None (jamais d'exception)."""
+    try:
+        desktop = ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
+        doc = desktop.getCurrentComponent()
+        if doc is not None and doc.supportsService("com.sun.star.text.TextDocument"):
+            return doc
+    except Exception:
+        log_exception("_current_writer_doc")
+    return None
+
+
+def sync_guide_state(ctx, doc=None):
+    """État du guidage du document courant (pour le toggle de la sidebar).
+
+    Si le guidage est actif, on le ré-applique aux formules (couleur
+    éventuellement changée dans les réglages, formules ajoutées à la main).
+    Appelé par la sidebar, à OnLoad / OnViewCreated et au changement de config.
+    Retourne ``False`` s'il n'y a pas de document Writer.
+    """
+    try:
+        if doc is None:
+            doc = _current_writer_doc(ctx)
+        if doc is None:
+            return False
+        on = is_guide_on(doc)
+        if on:
+            for obj in iter_math_objects(doc):
+                _apply_guide(obj, True)
+        return on
+    except Exception:
+        log_exception("sync_guide_state")
+        return False
+
+
+# --------------------------------------------------------------------------
+# Navigation dans l'éditeur de formule (vue Math) : Tab / Maj+Tab / Échap
+# --------------------------------------------------------------------------
+def is_math_model(model):
+    """Vrai si ``model`` est un document Math (formule)."""
+    try:
+        return bool(model is not None and model.supportsService("com.sun.star.formula.FormulaProperties"))
+    except Exception:
+        return False
+
+
+def _dispatch_frame(frame, command):
+    ctx = uno.getComponentContext()
+    helper = ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.DispatchHelper", ctx)
+    helper.executeDispatch(frame, command, "", 0, ())
+
+
+def has_marker(model):
+    """Reste-t-il un champ vide ``<?>`` dans la formule ? (en cas de doute : oui)."""
+    try:
+        return MARKER in str(model.Formula)
+    except Exception:
+        return True
+
+
+def goto_mark(controller, forward=True):
+    """Tab / Maj+Tab dans Math : champ suivant (F4) ou précédent (Maj+F4)."""
+    try:
+        _dispatch_frame(controller.getFrame(), ".uno:NextMark" if forward else ".uno:PrevMark")
+        return True
+    except Exception:
+        log_exception("goto_mark")
+        return False
+
+
+def exit_formula(controller):
+    """Quitte l'édition de la formule et remet le curseur juste après l'objet.
+
+    Limites : il n'y a pas d'API UNO "fermer l'éditeur". On envoie
+    ``.uno:TerminateInplaceActivation`` au frame Math (équivalent de Échap /
+    clic hors de la formule), puis on lit l'objet resté sélectionné dans
+    Writer pour poser le curseur de vue après lui. Si une étape manque, la
+    formule est quand même refermée ; le focus peut alors devoir être repris
+    d'un clic. Retourne True si la commande a été envoyée.
+    """
+    try:
+        frame = controller.getFrame()
+        writer_frame = frame.getCreator()
+        _dispatch_frame(frame, ".uno:TerminateInplaceActivation")
+    except Exception:
+        log_exception("exit_formula")
+        return False
+    try:
+        wctrl = writer_frame.getController()
+        sel = wctrl.getSelection()
+        anchor = sel.getAnchor()
+        cur = anchor.getText().createTextCursorByRange(anchor.getEnd())
+        wctrl.getViewCursor().gotoRange(cur.getEnd(), False)
+    except Exception:
+        pass  # la formule est fermée ; le curseur reste où LibreOffice l'a mis
+    return True
+
+
+def math_is_embedded(controller):
+    """Vrai si la vue Math est une formule activée dans un document Writer."""
+    try:
+        creator = controller.getFrame().getCreator()
+        model = creator.getController().getModel() if creator is not None else None
+        return bool(model is not None and model.supportsService("com.sun.star.text.TextDocument"))
+    except Exception:
+        return False
+
+
+# --------------------------------------------------------------------------
+# Étape suivante d'une équation (Ctrl+Alt+Entrée)
+# --------------------------------------------------------------------------
+EQ_MARGIN = 300  # 3 mm de marge avant le "=" (même valeur que align_equals)
+
+
+def plan_equation_step(left, has_formula, has_eq_tab, prev_margin):
+    """Décide comment aligner la nouvelle ligne (logique pure, testable).
+
+    * ``left`` : largeur estimée (1/100 mm) avant le "=" de la ligne courante.
+    * ``has_eq_tab`` : la ligne a déjà un taquet décimal sur "=" (chaîne d'étapes).
+    Retourne un dict ``{"tab": bool, "set_tab_pos": int|None, "margin": int|None}``.
+    ``tab`` = la nouvelle ligne commence par une tabulation puis "= ".
+    """
+    if has_eq_tab:                       # réutilise le taquet déjà posé
+        return {"tab": True, "set_tab_pos": None, "margin": None}
+    if has_formula:                      # "=" dans un objet : on décale la ligne
+        return {"tab": False, "set_tab_pos": None, "margin": int(prev_margin + left)}
+    return {"tab": True, "set_tab_pos": int(left) + EQ_MARGIN, "margin": None}
+
+
+def _para_at_cursor(doc):
+    """Paragraphe contenant le curseur de vue (objet Paragraph) ou None."""
+    view = doc.getCurrentController().getViewCursor()
+    cur = view.getText().createTextCursorByRange(view.getStart())
+    enum = cur.createEnumeration()
+    while enum.hasMoreElements():
+        para = enum.nextElement()
+        if para.supportsService("com.sun.star.text.Paragraph"):
+            return para
+    return None
+
+
+def _has_equals_tab(para):
+    try:
+        return any(getattr(t, "DecimalChar", "") == "=" for t in para.ParaTabStops)
+    except Exception:
+        return False
+
+
+def equation_step(doc):
+    """Crée la ligne suivante d'une résolution : "= " aligné sous le "=" précédent.
+
+    Si la ligne courante contient un "=" (texte ou objet formule) on insère un
+    nouveau paragraphe dessous, qui reprend le style de la ligne, déjà rempli
+    de ``= `` pour que l'élève continue ; chaîné, on obtient
+
+        3x + 2 = 11
+               = ...
+    * texte brut : taquet décimal sur "=" (comme ``align_equals``) ;
+    * formule : retrait gauche (alignement approximatif, voir ``align_equals``).
+    Tout dans un seul bloc d'annulation. Ne fait rien sans "=".
+    """
+    undo = None
+    try:
+        para = _para_at_cursor(doc)
+        if para is None:
+            return
+        portions = _portions(para)
+        cw = float(para.CharHeight) * 0.5 * HUNDREDTH_MM_PER_PT
+        left = estimate_left_width(portions, cw)
+        if left is None:
+            return
+        has_formula = any(p[0] == "formula" for p in portions)
+        plan = plan_equation_step(left, has_formula, _has_equals_tab(para), para.ParaLeftMargin)
+
+        undo = _enter_undo(doc, "Étape d'équation")
+        if plan["set_tab_pos"] is not None:
+            _set_decimal_tab(para, plan["set_tab_pos"])
+        text = para.getText()
+        cur = text.createTextCursorByRange(para.getEnd())
+        text.insertControlCharacter(cur, PARAGRAPH_BREAK, False)   # nouveau paragraphe
+        if plan["margin"] is not None:
+            cur.ParaLeftMargin = plan["margin"]
+        text.insertString(cur, ("\t" if plan["tab"] else "") + "= ", False)
+        doc.getCurrentController().getViewCursor().gotoRange(cur.getEnd(), False)
+    except Exception:
+        log_exception("equation_step")
+    finally:
+        _leave_undo(undo)

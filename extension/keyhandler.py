@@ -21,22 +21,144 @@ except ImportError:  # hors LibreOffice : bases factices pour pouvoir importer
 else:
     _UnoBase = unohelper.Base
 
-# Séquence tapée -> action_id (voir actions.FORMULAS).
-SEQUENCES = {
+# Valeurs de repli (config/catalog absents) : séquence -> action_id.
+DEFAULT_SEQUENCES = {
     "//": "fraction", "sqrt": "sqrt", "^^": "power", "__": "subscript",
     "vec": "vector", "+-": "plus_minus", "<=": "leq", ">=": "geq",
     "!=": "neq", "~=": "approx",
 }
-# Mots : ne se déclenchent pas au milieu d'un mot ("avec" ne doit pas donner "vec").
-WORD_SEQUENCES = ("sqrt", "vec")
-_ORDERED = sorted(SEQUENCES, key=len, reverse=True)
-BUFFER_MAX = 8
+DEFAULT_WORDS = frozenset(("sqrt", "vec"))      # ne se déclenchent pas dans un mot
+DEFAULT_COMBOS = {"Ctrl+Alt+G": "guide", "Ctrl+Alt+E": "align_equals",
+                  "Ctrl+Alt+Return": "equation_step"}
+BUFFER_MAX = 12
+
+# Tables actives, reconstruites par rebuild_tables() à chaque changement de config.
+SEQUENCES = dict(DEFAULT_SEQUENCES)
+WORD_SEQUENCES = set(DEFAULT_WORDS)
+COMBOS = {}                  # (modificateurs, KeyCode) -> action_id
+_ORDERED = []
 
 # Codes de touches (com.sun.star.awt.Key) et modificateurs (KeyModifier).
-KEY_G, KEY_E = 518, 516                    # A=512 -> G=518, E=516
-KEY_BACKSPACE = 1283
-MOD_CTRL, MOD_ALT = 2, 4                   # MOD1 (Ctrl), MOD2 (Alt)
-SHORTCUT_COMBOS = {KEY_G: "guide", KEY_E: "align_equals"}  # avec Ctrl+Alt
+KEY_TAB, KEY_RETURN, KEY_ESCAPE, KEY_BACKSPACE = 1282, 1280, 1281, 1283
+MOD_SHIFT, MOD_CTRL, MOD_ALT = 1, 2, 4     # SHIFT, MOD1 (Ctrl), MOD2 (Alt)
+_MOD_NAMES = {"ctrl": MOD_CTRL, "alt": MOD_ALT, "shift": MOD_SHIFT}
+
+
+def key_code(name):
+    """Nom de touche ("G", "7", "Return", "F5"...) -> KeyCode awt, ou None (pur)."""
+    n = name.strip().lower()
+    if len(n) == 1 and "a" <= n <= "z":
+        return 512 + ord(n) - ord("a")        # A=512
+    if len(n) == 1 and n.isdigit():
+        return 256 + int(n)                   # NUM0=256
+    if n in ("return", "enter"):
+        return KEY_RETURN
+    if n in ("tab",):
+        return KEY_TAB
+    if n in ("esc", "escape"):
+        return KEY_ESCAPE
+    if n == "space":
+        return 1284
+    if n.startswith("f") and n[1:].isdigit() and 1 <= int(n[1:]) <= 12:
+        return 768 + int(n[1:]) - 1           # F1=768
+    return None
+
+
+def parse_combo(text):
+    """"Ctrl+Alt+G" -> (modificateurs, KeyCode) ou None si invalide (pur)."""
+    mods, code = 0, None
+    for part in str(text or "").split("+"):
+        low = part.strip().lower()
+        if low in _MOD_NAMES:
+            mods |= _MOD_NAMES[low]
+        elif code is None and low:
+            code = key_code(low)
+        else:
+            return None
+    return (mods, code) if code is not None and mods else None
+
+
+def build_tables(entries):
+    """Construit (séquences, mots, combos) depuis une liste de triggers (pur).
+
+    ``entries`` : itérable de ``(action_id, trigger_dict, word_bool)``.
+    """
+    seqs, words, combos = {}, set(), {}
+    for action_id, trig, word in entries:
+        if not trig:
+            continue
+        value = str(trig.get("value") or "")
+        if trig.get("type") == "seq" and value:
+            seqs[value] = action_id
+            if word:
+                words.add(value)
+        elif trig.get("type") == "combo":
+            parsed = parse_combo(value)
+            if parsed:
+                combos[parsed] = action_id
+    return seqs, words, combos
+
+
+def _config_entries():
+    """Triggers actifs lus dans catalog/config ; None si ces modules manquent."""
+    try:
+        import catalog
+        import config
+    except Exception:
+        return None
+    out = []
+    for item in catalog.CATALOG:
+        aid = item["id"]
+        try:
+            if not config.is_enabled(aid) and item.get("kind") != "tool":
+                continue
+            if item.get("kind") == "tool" and not config.is_enabled(aid):
+                continue
+            out.append((aid, config.trigger(aid), bool(item.get("word"))))
+        except Exception:
+            math_insert.log_exception("_config_entries(%s)" % aid)
+    return out
+
+
+def rebuild_tables():
+    """Reconstruit les tables de déclencheurs (config modifiée ou repli)."""
+    global SEQUENCES, WORD_SEQUENCES, COMBOS, _ORDERED
+    try:
+        entries = _config_entries()
+    except Exception:
+        entries = None
+        math_insert.log_exception("rebuild_tables")
+    if entries is None:   # pas de catalog/config : table intégrée
+        entries = [(a, {"type": "seq", "value": q}, q in DEFAULT_WORDS)
+                   for q, a in DEFAULT_SEQUENCES.items()]
+        entries += [(a, {"type": "combo", "value": c}, False) for c, a in DEFAULT_COMBOS.items()]
+    SEQUENCES, WORD_SEQUENCES, COMBOS = build_tables(entries)
+    _ORDERED = sorted(SEQUENCES, key=len, reverse=True)
+
+
+_SUBSCRIBED = []
+
+
+def _subscribe_config():
+    """S'abonne (une fois) aux changements de config ; ignore l'absence de config."""
+    if _SUBSCRIBED:
+        return
+    _SUBSCRIBED.append(True)
+    try:
+        import config
+        config.subscribe(_on_config_changed)
+    except Exception:
+        pass
+
+
+def _on_config_changed(*_args):
+    rebuild_tables()
+    for handler in list(_INSTALLED.values()):
+        try:
+            math_insert.sync_guide_state(handler.ctx)
+        except Exception:
+            pass
+        break      # une seule resynchronisation suffit
 
 
 def match_sequence(buffer, prev_char_fn=lambda n: ""):
@@ -60,6 +182,9 @@ def match_sequence(buffer, prev_char_fn=lambda n: ""):
             continue          # anti-URL : "http://"
         return seq, SEQUENCES[seq]
     return None
+
+
+rebuild_tables()
 
 
 def _as_char(key_char):

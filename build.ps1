@@ -70,10 +70,10 @@ try {
         if (Test-Path -LiteralPath $upd) {
             $u = [System.IO.File]::ReadAllText($upd)
             $u = [regex]::Replace($u, '(<version\s+value=")[^"]*(")', "`${1}$Version`${2}")
-            $u = [regex]::Replace($u, '(<version>)[^<]*(</version>)', "`${1}$Version`${2}")
             $url = "https://github.com/aifedespaix/plugin-maths/releases/download/v$Version/plugin-maths.oxt"
-            $u = [regex]::Replace($u, '(<src\s+href=")[^"]*(")', "`${1}$url`${2}")
-            $u = [regex]::Replace($u, '(<src>)[^<]*(</src>)', "`${1}$url`${2}")
+            $u = [regex]::Replace($u, '(<update-download>\s*<src\s+xlink:href=")[^"]*(")', "`${1}$url`${2}")
+            $notes = "https://github.com/aifedespaix/plugin-maths/releases/tag/v$Version"
+            $u = [regex]::Replace($u, '(<release-notes>\s*<src\s+lang="fr"\s+xlink:href=")[^"]*(")', "`${1}$notes`${2}")
             [System.IO.File]::WriteAllText((Join-Path $staging 'update.xml'), $u, $enc)
             Copy-Item -LiteralPath (Join-Path $staging 'update.xml') -Destination (Join-Path $OutDir 'update.xml') -Force
         }

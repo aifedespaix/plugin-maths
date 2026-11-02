@@ -1,0 +1,10 @@
+{
+  "label": "Complet",
+  "description": "Toutes les actions disponibles, y compris intégrale, somme, limite et matrice.",
+  "enabled": "all",
+  "ui": {
+    "scale": 1.0,
+    "theme": "clair",
+    "button_height": 40
+  }
+}

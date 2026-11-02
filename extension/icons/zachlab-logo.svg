@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <!-- Le Z de Zachar't Mentale, repris tel quel : même tracé, mêmes quatre points. -->
+  <polyline
+    points="36,36 92,36 36,92 92,92"
+    fill="none"
+    stroke="#64748B"
+    stroke-width="12"
+    stroke-linejoin="round"
+    stroke-linecap="round"
+  />
+
+  <circle cx="36" cy="36" r="20" fill="#EF4444" />
+  <circle cx="92" cy="36" r="20" fill="#F97316" />
+  <circle cx="36" cy="92" r="20" fill="#3B82F6" />
+  <circle cx="92" cy="92" r="20" fill="#EAB308" />
+</svg>

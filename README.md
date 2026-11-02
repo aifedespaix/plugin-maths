@@ -23,11 +23,33 @@ Conçu pour aider les élèves qui travaillent sur PC à retrouver l'aisance du 
 3. Redémarrer LibreOffice et ouvrir un document Writer.
 4. Ouvrir la barre latérale (Affichage > Barre latérale, ou Ctrl+F5) et cliquer sur l'icône « Maths ».
 
+### Installation silencieuse (Windows)
+
+```powershell
+./scripts/install.ps1                      # dernière release GitHub (ou dist/plugin-maths.oxt s'il existe)
+./scripts/install.ps1 -Oxt C:\chemin\plugin-maths.oxt
+./scripts/install.ps1 -UserOnly            # sans droits administrateur
+./scripts/install.ps1 -CloseLibreOffice    # ferme LibreOffice avant d'installer
+./scripts/uninstall.ps1                    # désinstalle (fr.aifedespaix.plugin-maths)
+```
+
+Le script repère `unopkg` dans `Program Files\LibreOffice\program`, refuse de continuer si LibreOffice est ouvert, installe pour tous les utilisateurs (`unopkg add --shared -f`, auto-élévation administrateur) et se replie sur l'utilisateur courant (`unopkg add -f`) en cas d'échec.
+
 Pour désinstaller : Outils > Gestionnaire d'extensions > « Maths facile pour Writer » > Supprimer.
 
 Les mises à jour sont proposées automatiquement par LibreOffice (voir plus bas).
 
-Les mises à jour sont proposées automatiquement par LibreOffice (voir plus bas).
+## Configuration
+
+Trois profils (dossier `extension/presets/`) : **Simple** (essentiels), **Standard**, **Complet** (tout). Le bouton « ⚙ Réglages » du panneau ouvre une fenêtre non modale avec les onglets Profil, Gabarits (activer/désactiver chaque bouton), Raccourcis (changer la séquence tapée, conflits signalés), Affichage (thème clair/doux/contraste, échelle 80 % à 160 %, hauteur des boutons, couleur du guidage).
+
+Les réglages sont enregistrés dans `plugin-maths.json` du profil utilisateur LibreOffice (repli : `%APPDATA%\plugin-maths\config.json`, ou `~/.config`). Ordre de résolution : profil < réglages personnels. Un fichier absent ou corrompu est ignoré (valeurs par défaut). Le panneau se met à jour dès l'enregistrement.
+
+```json
+{"preset": "standard", "overrides": {"enabled": {"matrix": true},
+  "shortcuts": {"fraction": {"type": "seq", "value": "//"}},
+  "ui": {"scale": 1.0, "theme": "doux", "button_height": 44, "guide_color": "#FFF3C4"}}, "guide": false}
+```
 
 ## Raccourcis
 
@@ -44,7 +66,19 @@ Les mises à jour sont proposées automatiquement par LibreOffice (voir plus bas
 - Ctrl+Alt+G : guidage visuel des formules
 - Ctrl+Alt+E : aligner les « = » des paragraphes sélectionnés
 
-Les autres actions (angle, triangle, sin, cos...) se font par clic dans le panneau.
+- Ctrl+Alt+Entrée : étape d'équation (nouvelle ligne alignée sur le « = » précédent)
+
+Les séquences ci-dessus sont les valeurs par défaut et se changent dans les réglages. Les autres actions se font par clic dans le panneau, qui propose un bouton pour chaque action.
+
+Dans une formule : Tab / Maj+Tab = champ suivant / précédent, Échap ou Ctrl+Entrée = sortir de la formule et continuer le texte. Chaque insertion s'annule en un seul Ctrl+Z.
+
+## Modèles de documents
+
+Squelettes aérés insérés au curseur, sans fenêtre : résoudre une équation, problème (données / inconnue / calcul / conclusion), géométrie (énoncé / figure / propriété / démonstration / conclusion), tableau de valeurs d'une fonction, calcul littéral, propriété (propriété / exemple / à retenir).
+
+## Vérifier une équation
+
+Sélectionner une équation (« 2x+1 = 7 »), saisir la variable et sa valeur dans la section « Vérifier » du panneau, puis cliquer : le résultat s'affiche (✓ juste / ✗ faux). Le calcul est fait par un évaluateur sûr (jamais d'`eval`), avec multiplication implicite, fractions et décimaux à virgule.
 
 ## Développement
 
@@ -70,6 +104,8 @@ Le workflow `release.yml` construit l'oxt avec la version du tag, crée la relea
 ## Mise à jour automatique
 
 `description.xml` pointe vers `update.xml` (sur `main`, via raw.githubusercontent.com). LibreOffice le consulte, et propose la nouvelle version dès qu'une release est publiée.
+
+Les notes de la release GitHub sont extraites de la section de la version dans `CHANGELOG.md` (à mettre à jour avant de poser le tag) ; `update.xml` reçoit aussi le lien vers cette page (`<release-notes>`), affiché par LibreOffice lors d'une mise à jour.
 
 La CI (`ci.yml`) valide les XML, compile le Python, construit l'oxt et le publie comme artefact.
 
