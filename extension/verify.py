@@ -390,7 +390,7 @@ def starmath_to_expr(code):
 
 def _formula_code(obj):
     try:
-        emb = obj.EmbeddedObject
+        emb = obj.Model
         return emb.Formula
     except Exception:
         return None

@@ -110,7 +110,7 @@ def insert_math(doc, formula, tab_and_go=True):
       4. ``insertTextContent(curseur, objet, remplacer)`` le place dans le
          texte. ``remplacer=True`` écrase la sélection ; sinon on insère à la
          position du curseur.
-      5. Seulement après l'insertion, ``objet.EmbeddedObject`` donne accès au
+      5. Seulement après l'insertion, ``objet.Model`` donne accès au
          document Math lui-même : on écrit sa propriété ``Formula`` (le code
          StarMath). Les ``<?>`` sont des "marqueurs" : champs vides que la
          touche F4 de Math permet de parcourir.
@@ -139,7 +139,7 @@ def insert_math(doc, formula, tab_and_go=True):
             # (4) True = remplace la sélection éventuelle
             cursor.getText().insertTextContent(cursor, obj, bool(selected))
 
-            obj.EmbeddedObject.Formula = formula                 # (5)
+            obj.Model.Formula = formula                 # (5)
 
             if is_guide_on(doc):                                 # (6)
                 _apply_guide(obj, True)
@@ -208,10 +208,30 @@ def _tab_and_go(doc, obj):
         log_exception("_tab_and_go/activate")
         return
     _install_on_active_math()
+    focus_active_frame()          # le focus va a l'editeur de formule, pas a la sidebar
     try:
         _dispatch_uno(doc, ".uno:NextMark")
     except Exception:
         log_exception("_tab_and_go/nextmark")
+
+
+def focus_active_frame(doc=None):
+    """Rend le focus clavier a la fenetre active (editeur Math sinon document).
+
+    Appele apres un clic dans la sidebar: sans cela le focus reste sur le
+    bouton et l'utilisateur doit recliquer dans le texte avant de taper.
+    Meilleur effort, jamais d'exception.
+    """
+    try:
+        ctx = uno.getComponentContext()
+        desktop = ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
+        frame = desktop.getCurrentFrame()
+        if frame is None and doc is not None:
+            frame = doc.getCurrentController().getFrame()
+        if frame is not None:
+            frame.getComponentWindow().setFocus()
+    except Exception:
+        log_exception("focus_active_frame")
 
 
 def _install_on_active_math():
@@ -364,7 +384,7 @@ def _portions(para):
         elif kind == "TextContent":
             content = por.TextContent
             if content is not None and _is_math_object(content):
-                out.append(("formula", content.EmbeddedObject.Formula, content.Width))
+                out.append(("formula", content.Model.Formula, content.Width))
     return out
 
 

@@ -547,6 +547,7 @@ class PanelUI(object):
         self._nodes = []
         self._by_id = {}
         self._notebooks = []
+        self._expanders = []
         self._listeners = []
         self._recent = []
         self._parent = parent_window
@@ -574,6 +575,7 @@ class PanelUI(object):
                 for p in n.pages:
                     walk(p)
             elif isinstance(n, _Expander):
+                self._expanders.append(n)
                 walk(n.body)
             elif isinstance(n, (_Stack, _Grid)):
                 for c in n.children:
@@ -662,6 +664,10 @@ class PanelUI(object):
             _set(m, "State", 1 if leaf.checked else 0)
         if leaf.tooltip:
             _set(m, "HelpText", leaf.tooltip)
+        if k in ("button", "toggle", "header", "tab"):
+            # Un clic ne doit pas voler le focus: le curseur reste dans le document.
+            _set(m, "FocusOnClick", False)
+            _set(m, "Tabstop", False)
         self._cmodel.insertByName(leaf.wid, m)
         ctrl = self._container.getControl(leaf.wid)
         if ctrl is None:
@@ -836,11 +842,15 @@ class PanelUI(object):
 
     def _toggle(self, exp):
         exp.expanded = not exp.expanded
-        try:
-            self._container.getControl(exp.header.wid).getModel().setPropertyValue(
-                "Label", self._header_text(exp))
-        except Exception:
-            pass
+        if exp.expanded:  # accordeon: une seule section ouverte, tout reste visible sans defiler
+            for other in self._expanders:
+                if other is not exp:
+                    other.expanded = False
+        for e in self._expanders:
+            try:
+                e.header.ctrl.getModel().setPropertyValue("Label", self._header_text(e))
+            except Exception:
+                pass
         self.relayout()
         self._notify_layout()
 
