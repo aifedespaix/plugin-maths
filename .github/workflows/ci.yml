@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Valider les XML
+        run: |
+          python3 - <<'PY'
+          import glob, sys
+          import xml.etree.ElementTree as ET
+          files = [f for f in glob.glob('**/*', recursive=True)
+                   if f.endswith(('.xml', '.xcu', '.xcs', '.ui')) and not f.startswith(('dist/', '.git/'))]
+          bad = 0
+          for f in files:
+              try:
+                  ET.parse(f)
+                  print('OK  ', f)
+              except Exception as e:
+                  bad += 1
+                  print('FAIL', f, e)
+          sys.exit(1 if bad else 0)
+          PY
+
+      - name: Compiler le Python
+        run: python3 -m py_compile extension/*.py
+
+      - name: Construire l'oxt
+        shell: pwsh
+        run: ./build.ps1 -OutDir dist
+
+      - name: Verifier l'oxt
+        run: |
+          python3 - <<'PY'
+          import zipfile, sys
+          z = zipfile.ZipFile('dist/plugin-maths.oxt')
+          names = z.namelist()
+          print('\n'.join(names))
+          assert 'META-INF/manifest.xml' in names, 'META-INF/manifest.xml absent'
+          assert not any('\\' in n for n in names), 'separateur antislash dans une entree'
+          assert z.testzip() is None, 'zip corrompu'
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-maths-oxt
+          path: dist/plugin-maths.oxt
+          if-no-files-found: error
