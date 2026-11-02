@@ -24,8 +24,8 @@ except ImportError:  # pragma: no cover
 
 DEFAULT_PRESET = "standard"
 RECENT_MAX = 6
-THEMES = ("clair", "doux", "contraste")
-DEFAULT_UI = {"scale": 1.0, "theme": "clair", "button_height": 44,
+THEMES = ("auto", "clair", "doux", "sombre", "contraste")
+DEFAULT_UI = {"scale": 1.0, "theme": "auto", "button_height": 44,
               "guide_color": "#FFF3C4"}
 _COLOR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 

@@ -42,11 +42,11 @@ except Exception:
 
 EXT_ID = "fr.aifedespaix.plugin-maths"
 PRESETS = ["simple", "standard", "complet"]
-THEMES = ["clair", "doux", "contraste"]
+THEMES = ["auto", "clair", "doux", "sombre", "contraste"]
 SCALES = [0.8, 1.0, 1.2, 1.4, 1.6]
 HEIGHTS = [36, 44, 52, 60]
 GUIDE_COLORS = ["#FFF3C4", "#DCEBFF", "#DDF3DD", "#FBE3EC", "#E8E8E8"]
-THEME_LABELS = ["Clair", "Doux", "Contraste élevé"]
+THEME_LABELS = ["Automatique (suit LibreOffice)", "Clair", "Doux", "Sombre", "Contraste élevé"]
 SCALE_LABELS = ["80 %", "100 %", "120 %", "140 %", "160 %"]
 HEIGHT_LABELS = ["Petite (36)", "Normale (44)", "Grande (52)", "Très grande (60)"]
 COLOR_LABELS = ["Jaune clair", "Bleu clair", "Vert clair", "Rose clair", "Gris clair"]

@@ -1132,9 +1132,11 @@
               <object class="GtkComboBoxText" id="cmb_theme">
                 <property name="visible">True</property>
                 <items>
-                  <item id="0">Clair</item>
-                  <item id="1">Doux</item>
-                  <item id="2">Contraste élevé</item>
+                  <item id="0">Automatique (suit LibreOffice)</item>
+                  <item id="1">Clair</item>
+                  <item id="2">Doux</item>
+                  <item id="3">Sombre</item>
+                  <item id="4">Contraste élevé</item>
                 </items>
               </object>
               <packing>
