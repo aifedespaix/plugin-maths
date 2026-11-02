@@ -110,9 +110,9 @@ def _config_entries():
     for item in catalog.CATALOG:
         aid = item["id"]
         try:
-            if not config.is_enabled(aid) and item.get("kind") != "tool":
-                continue
-            if item.get("kind") == "tool" and not config.is_enabled(aid):
+            # Les outils (guide, étape d'équation...) gardent leur raccourci
+            # même si leur bouton est masqué ; les autres suivent la config.
+            if item.get("kind") != "tool" and not config.is_enabled(aid):
                 continue
             out.append((aid, config.trigger(aid), bool(item.get("word"))))
         except Exception:
@@ -195,17 +195,24 @@ def _as_char(key_char):
 
 
 class MathsKeyHandler(_UnoBase, XKeyHandler):
-    """Remplace les séquences tapées par des formules. Ne casse jamais la frappe."""
+    """Remplace les séquences tapées par des formules. Ne casse jamais la frappe.
+
+    Deux rôles selon la vue : vue Writer (séquences + combos) ; vue Math d'une
+    formule activée dans Writer (Tab / Maj+Tab / Échap / Ctrl+Entrée).
+    """
 
     def __init__(self, ctx, controller):
         self.ctx = ctx
         self.controller = controller
         self.buffer = ""
+        self.is_math = math_insert.is_math_model(controller.getModel())
 
     # --- XKeyHandler -------------------------------------------------------
     def keyPressed(self, ev):
         """Retourne True seulement si l'événement est consommé."""
         try:
+            if self.is_math:
+                return self._on_math_key(ev)
             return self._on_key(ev)
         except Exception:
             self.buffer = ""
@@ -218,17 +225,42 @@ class MathsKeyHandler(_UnoBase, XKeyHandler):
     def disposing(self, source):
         _INSTALLED.pop(id(self.controller), None)
 
-    # --- logique -----------------------------------------------------------
+    # --- vue Math ----------------------------------------------------------
+    def _on_math_key(self, ev):
+        """Tab = champ suivant, Maj+Tab = précédent, Échap / Ctrl+Entrée = sortir.
+
+        Uniquement quand la formule est dans un document Writer (jamais dans
+        une fenêtre Math autonome). Quand il n'y a plus de ``<?>``, Tab sort
+        de la formule : on enchaîne naturellement avec le texte. Best effort :
+        selon la version, la vue Math peut ne pas relayer toutes les touches.
+        """
+        mods, code = ev.Modifiers, ev.KeyCode
+        if not math_insert.math_is_embedded(self.controller):
+            return False
+        if code == KEY_TAB and not (mods & (MOD_CTRL | MOD_ALT)):
+            if mods & MOD_SHIFT:
+                return math_insert.goto_mark(self.controller, forward=False)
+            if math_insert.has_marker(self.controller.getModel()):
+                return math_insert.goto_mark(self.controller, forward=True)
+            return math_insert.exit_formula(self.controller)
+        if code == KEY_ESCAPE and not mods:
+            return math_insert.exit_formula(self.controller)
+        if code == KEY_RETURN and (mods & MOD_CTRL) and not (mods & (MOD_ALT | MOD_SHIFT)):
+            return math_insert.exit_formula(self.controller)
+        return False
+
+    # --- vue Writer --------------------------------------------------------
     def _on_key(self, ev):
         mods, code = ev.Modifiers, ev.KeyCode
         char = _as_char(ev.KeyChar)
         ctrl, alt = bool(mods & MOD_CTRL), bool(mods & MOD_ALT)
 
-        # Ctrl+Alt+G / Ctrl+Alt+E (on ignore AltGr+lettre qui produit un
-        # caractère non ASCII comme "€").
-        if ctrl and alt and code in SHORTCUT_COMBOS and (not char or ord(char) < 128):
+        # Combos configurables (ex. Ctrl+Alt+G). On ignore AltGr+lettre qui
+        # produit un caractère non ASCII comme "€".
+        combo = COMBOS.get((mods, code))
+        if combo and (not char or ord(char) < 128):
             self.buffer = ""
-            actions.run_action(self.controller.getModel(), SHORTCUT_COMBOS[code])
+            actions.run_action(self.controller.getModel(), combo)
             return True
 
         if code == KEY_BACKSPACE and not (ctrl or alt):
@@ -288,12 +320,16 @@ _INSTALLED = {}
 
 
 def install(ctx, controller):
-    """Installe (une seule fois) le KeyHandler sur le controller Writer."""
-    if controller is None or id(controller) in _INSTALLED:
-        return _INSTALLED.get(id(controller))
-    model = controller.getModel()
-    if model is None or not model.supportsService("com.sun.star.text.TextDocument"):
+    """Installe (une seule fois) le KeyHandler sur une vue Writer ou Math."""
+    if controller is None:
         return None
+    if id(controller) in _INSTALLED:
+        return _INSTALLED[id(controller)]
+    model = controller.getModel()
+    if model is None or not (model.supportsService("com.sun.star.text.TextDocument")
+                             or math_insert.is_math_model(model)):
+        return None
+    _subscribe_config()
     handler = MathsKeyHandler(ctx, controller)
     controller.addKeyHandler(handler)
     _INSTALLED[id(controller)] = handler

@@ -1,79 +1,161 @@
 # -*- coding: utf-8 -*-
-"""Table des actions (boutons de la sidebar, raccourcis) et leur exécution."""
-import math_insert
+"""Exécution des actions du catalogue (sidebar, raccourcis clavier).
 
-# Ordre = ordre d'affichage dans la sidebar.
-ACTION_IDS = [
-    # Nombres & Opérations
-    "times", "divide", "plus_minus", "leq", "geq", "neq", "approx", "pi",
-    # Gabarits
-    "fraction", "sqrt", "power", "subscript", "vector", "abs",
-    # Géométrie / Trigonométrie
-    "angle", "triangle", "parallel", "perpendicular", "degree", "sin", "cos", "tan",
-    # Outils
-    "guide", "align_equals",
-]
+Les données (ids, formules, raccourcis) viennent de ``catalog`` et ``config`` ;
+ce module ne contient aucune formule en dur. Les modules frères optionnels
+(templates, verify, settings) sont importés paresseusement.
+"""
+import sys
+import traceback
 
-# Code StarMath inséré par chaque action. <?> = champ vide à remplir.
-FORMULAS = {
-    "times": "times",
-    "divide": "div",
-    "plus_minus": "+-",
-    "leq": "leslant",
-    "geq": "geslant",
-    "neq": "<>",
-    "approx": "approx",
-    "pi": "%pi",
-    "fraction": "{<?>} over {<?>}",
-    "sqrt": "sqrt {<?>}",
-    "power": "{<?>} ^ {<?>}",
-    "subscript": "{<?>} _ {<?>}",
-    "vector": "vec {<?>}",
-    "abs": "abs {<?>}",
-    "angle": "widehat {<?>}",
-    "triangle": "%DELTA {<?>}",
-    "parallel": "{<?>} parallel {<?>}",
-    "perpendicular": "{<?>} ortho {<?>}",
-    "degree": '{<?>} "°"',
-    "sin": "sin left ( {<?>} right )",
-    "cos": "cos left ( {<?>} right )",
-    "tan": "tan left ( {<?>} right )",
-}
+import catalog
 
-# Actions sans champ à remplir : pas de Tab & Go.
-_NO_TAB_AND_GO = {"times", "divide", "plus_minus", "leq", "geq", "neq", "approx", "pi"}
+try:
+    import math_insert
+except Exception:  # pragma: no cover
+    math_insert = None
+try:
+    import config
+except Exception:  # pragma: no cover
+    config = None
 
-# Textes des tooltips.
-SHORTCUTS = {
-    "times": "[ clic ]", "divide": "[ clic ]", "plus_minus": "[ +- ]",
-    "leq": "[ <= ]", "geq": "[ >= ]", "neq": "[ != ]", "approx": "[ ~= ]",
-    "pi": "[ clic ]",
-    "fraction": "[ // ]", "sqrt": "[ sqrt ]", "power": "[ ^^ ]",
-    "subscript": "[ __ ]", "vector": "[ vec ]", "abs": "[ clic ]",
-    "angle": "[ clic ]", "triangle": "[ clic ]", "parallel": "[ clic ]",
-    "perpendicular": "[ clic ]", "degree": "[ clic ]",
-    "sin": "[ clic ]", "cos": "[ clic ]", "tan": "[ clic ]",
-    "guide": "[ Ctrl+Alt+G ]", "align_equals": "[ Ctrl+Alt+E ]",
-}
+ACTION_IDS = [e["id"] for e in catalog.CATALOG]
+# Compat : action_id -> StarMath (templates uniquement).
+FORMULAS = {e["id"]: e["formula"] for e in catalog.CATALOG if e["formula"]}
+# action_id -> "[ // ]" / "[ clic ]" ; mis à jour en place si la config change.
+SHORTCUTS = {}
 
 
-def run_action(doc, action_id):
-    """Exécute une action sur un document Writer (jamais d'exception)."""
+def _refresh_shortcuts():
+    for e in catalog.CATALOG:
+        s = config.shortcut_text(e["id"]) if config else (
+            e["trigger"]["value"] if e["trigger"] else "")
+        SHORTCUTS[e["id"]] = "[ %s ]" % (s if s else "clic")
+
+
+try:
+    _refresh_shortcuts()
+    if config:
+        config.subscribe(_refresh_shortcuts)
+except Exception:  # pragma: no cover
+    pass
+
+
+def _log(where):
     try:
-        if action_id == "guide":
-            math_insert.set_guide(doc, not math_insert.is_guide_on(doc))
-        elif action_id == "align_equals":
-            math_insert.align_equals(doc)
-        elif action_id in FORMULAS:
-            math_insert.insert_math(doc, FORMULAS[action_id],
-                                    tab_and_go=action_id not in _NO_TAB_AND_GO)
+        if math_insert is not None and hasattr(math_insert, "log_exception"):
+            math_insert.log_exception(where)
+        else:
+            sys.stderr.write("[plugin-maths] %s\n%s\n" % (where, traceback.format_exc()))
     except Exception:
-        math_insert.log_exception("run_action(%s)" % action_id)
+        pass
+
+
+def _sibling(name):
+    """Import paresseux d'un module frère ; None s'il est absent/cassé."""
+    try:
+        return __import__(name)
+    except Exception:
+        _log("import %s" % name)
+        return None
+
+
+def _enabled(action_id):
+    return config.is_enabled(action_id) if config else True
+
+
+# --------------------------------------------------------------- insertions
+def _insert_symbol(doc, text):
+    """Insère du texte brut au curseur de vue (remplace la sélection), en un undo."""
+    mi_insert = getattr(math_insert, "insert_text", None) if math_insert else None
+    if mi_insert:
+        mi_insert(doc, text)
+        return
+    controller = doc.getCurrentController()
+    cursor = controller.getViewCursor()
+    undo = doc.getUndoManager()
+    undo.enterUndoContext("Insertion")
+    try:
+        cursor.setString(text)   # remplace la sélection éventuelle
+        cursor.collapseToEnd()
+    finally:
+        undo.leaveUndoContext()
+
+
+def _selected_text(doc):
+    try:
+        sel = doc.getCurrentController().getSelection()
+        txt = sel.getByIndex(0).getString() if sel.getCount() else ""
+        return txt or ""
+    except Exception:
+        return ""
+
+
+def _verify(doc, params):
+    verify = _sibling("verify")
+    if verify is None:
+        return {"text": "Vérification indisponible", "ok": None}
+    params = params or {}
+    text = _selected_text(doc)
+    try:
+        if hasattr(verify, "extract_equation"):
+            extracted = verify.extract_equation(doc.getCurrentController().getSelection())
+            if isinstance(extracted, str) and extracted.strip():
+                text = extracted
+    except Exception:
+        _log("verify.extract_equation")
+    var = (params.get("ent_verify_var") or "x").strip() or "x"
+    return verify.check(text, var, params.get("ent_verify_value") or "")
+
+
+def run_action(doc, action_id, params=None, ctx=None):
+    """Exécute une action sur un document Writer. Jamais d'exception.
+
+    Retourne None ou, pour ``verify``, {"text": str, "ok": bool|None}.
+    Pousse les insertions (symboles, gabarits, modèles) dans les récents.
+    """
+    try:
+        e = catalog.BY_ID.get(action_id)
+        if e is None:
+            return None
+        kind = e["kind"]
+        if action_id == "open_settings":
+            settings = _sibling("settings")
+            if settings is not None:
+                if ctx is None:
+                    import uno
+                    ctx = uno.getComponentContext()
+                settings.open_settings(ctx)
+            return None
+        if kind != "tool" and not _enabled(action_id):
+            return None
+        if kind == "verify":
+            return _verify(doc, params)
+        if kind == "tool":
+            fn = {"guide": lambda: math_insert.set_guide(doc, not math_insert.is_guide_on(doc)),
+                  "align_equals": lambda: math_insert.align_equals(doc),
+                  "equation_step": lambda: math_insert.equation_step(doc)}.get(action_id)
+            if fn:
+                fn()
+            return None
+        if kind == "symbol":
+            _insert_symbol(doc, e["text"])
+        elif kind == "template":
+            math_insert.insert_math(doc, e["formula"], tab_and_go="<?>" in e["formula"])
+        elif kind == "model":
+            templates = _sibling("templates")
+            if templates is None:
+                return None
+            templates.insert_template(doc, action_id)
+        if config:
+            config.push_recent(action_id)
+    except Exception:
+        _log("run_action(%s)" % action_id)
+    return None
 
 
 def _current_writer_doc(ctx):
     """Document Writer actif, ou None."""
-    import uno  # local : le module reste importable hors LibreOffice
     smgr = ctx.ServiceManager
     desktop = smgr.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
     doc = desktop.getCurrentComponent()
@@ -82,11 +164,22 @@ def _current_writer_doc(ctx):
     return None
 
 
-def dispatch(ctx, action_id):
+def dispatch(ctx, action_id, params=None):
     """Point d'entrée de la sidebar : agit sur le document Writer courant."""
     try:
+        e = catalog.BY_ID.get(action_id)
+        if e is None:
+            return None
+        if action_id == "open_settings":
+            return run_action(None, action_id, params, ctx)
+        if e["kind"] != "tool" and not _enabled(action_id):
+            return None
         doc = _current_writer_doc(ctx)
-        if doc is not None:
-            run_action(doc, action_id)
+        if doc is None:
+            if e["kind"] == "verify":
+                return {"text": "Ouvre un document Writer", "ok": None}
+            return None
+        return run_action(doc, action_id, params, ctx)
     except Exception:
-        math_insert.log_exception("dispatch(%s)" % action_id)
+        _log("dispatch(%s)" % action_id)
+        return None

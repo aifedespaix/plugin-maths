@@ -76,6 +76,10 @@ class Startup(_UnoBase, XJob):
                     env = arg.Value
             controller = _find_controller(self.ctx, env)
             keyhandler.install(self.ctx, controller)
+            # Le toggle "guidage" de la sidebar lit l'état du document ; on
+            # ré-applique aussi le fond aux formules d'un document rouvert.
+            if controller is not None:
+                math_insert.sync_guide_state(self.ctx, controller.getModel())
         except Exception:
             math_insert.log_exception("Startup.execute")
         return ()
