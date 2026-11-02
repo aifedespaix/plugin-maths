@@ -10,13 +10,34 @@ try:
     from com.sun.star.lang import XServiceInfo
     from com.sun.star.ui import XUIElementFactory, XUIElement, XToolPanel, XSidebarPanel
     HAVE_UNO = True
-except Exception:  # hors LibreOffice
+except Exception:  # hors LibreOffice (tests, py_compile)
+    uno = None
     HAVE_UNO = False
 
+    # Bases de repli DISTINCTES: "XServiceInfo = XUIElement = ... = object"
+    # donnait "duplicate base class object" des que deux interfaces (ou
+    # Base + une interface) etaient heritees ensemble.
+    class _StubBase(object):
+        pass
+
     class _Stub(object):
-        Base = object
+        Base = _StubBase
     unohelper = _Stub()
-    XServiceInfo = XUIElementFactory = XUIElement = XToolPanel = XSidebarPanel = object
+
+    class XServiceInfo(object):
+        pass
+
+    class XUIElementFactory(object):
+        pass
+
+    class XUIElement(object):
+        pass
+
+    class XToolPanel(object):
+        pass
+
+    class XSidebarPanel(object):
+        pass
 
 IMPL_NAME = "fr.aifedespaix.plugin_maths.PanelFactory"
 SERVICE_NAMES = ("com.sun.star.ui.UIElementFactory",)
@@ -44,6 +65,10 @@ def _ui_path(ctx):
     return os.path.join(os.path.dirname(os.path.abspath(__file__)), "ui", "sidebar.ui")
 
 
+OK_COLOR = 0x2E7D32   # vert doux
+KO_COLOR = 0xC2610C   # orange doux (jamais de rouge agressif)
+
+
 class MathsPanel(unohelper.Base, XSidebarPanel, XUIElement, XToolPanel):
     def __init__(self, ctx, frame, parent_window, url, sidebar):
         self.ctx, self.frame, self.url, self.sidebar = ctx, frame, url, sidebar
@@ -51,16 +76,51 @@ class MathsPanel(unohelper.Base, XSidebarPanel, XUIElement, XToolPanel):
         self.ui = None
         try:
             from ui_loader import load_ui
-            self.ui = load_ui(ctx, parent_window, _ui_path(ctx), self._on_action, self._request_layout)
+            self.ui = load_ui(ctx, parent_window, _ui_path(ctx), self._on_action,
+                              on_layout_changed=self._request_layout)
+            self._sync_guide()
         except Exception:
             _log_exc("load ui")
 
-    def _on_action(self, action_id):
+    def _sync_guide(self):
+        """Aligne le toggle du guidage sur l'etat du document courant."""
+        try:
+            if self.ui is None:
+                return
+            import math_insert
+            state = None
+            if hasattr(math_insert, "sync_guide_state"):
+                state = math_insert.sync_guide_state(self.ctx)
+            self.ui.set_value("tgl_guide", bool(state))
+        except Exception:
+            _log_exc("sync guide")
+
+    def _on_action(self, action_id, values=None):
+        result = None
         try:
             import actions
-            actions.dispatch(self.ctx, action_id)
+            try:
+                result = actions.dispatch(self.ctx, action_id, values or {})
+            except TypeError:  # ancienne signature dispatch(ctx, id)
+                result = actions.dispatch(self.ctx, action_id)
         except Exception:
             _log_exc("dispatch " + str(action_id))
+        self._after_action(action_id, result)
+
+    def _after_action(self, action_id, result):
+        try:
+            if self.ui is None:
+                return
+            if isinstance(result, dict) and "text" in result:
+                ok = result.get("ok")
+                color = OK_COLOR if ok is True else KO_COLOR if ok is False else None
+                self.ui.set_text("lbl_verify_result", result.get("text", ""), color)
+            if action_id == "guide":
+                self._sync_guide()
+            self.ui.refresh()  # recents mis a jour, config relue
+            self._request_layout()
+        except Exception:
+            _log_exc("after action")
 
     def _request_layout(self):
         try:
@@ -78,6 +138,8 @@ class MathsPanel(unohelper.Base, XSidebarPanel, XUIElement, XToolPanel):
         except Exception:
             _log_exc("height")
         # min = max = preferred: la deck defile si le contenu depasse.
+        if uno is None:
+            return (h, h, h)
         return uno.createUnoStruct("com.sun.star.ui.LayoutSize", h, h, h)
 
     def getMinimalWidth(self):

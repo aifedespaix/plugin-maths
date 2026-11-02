@@ -1,8 +1,10 @@
-Maths facile pour Writer : une barre latérale et des raccourcis pour écrire des formules de mathématiques sans effort.
+Maths facile pour Writer : une barre latérale et des raccourcis pour écrire des formules de mathématiques sans effort, comme sur papier.
 
-- Panneau latéral avec boutons (opérations, fractions, racines, puissances, vecteurs, angles, trigonométrie...).
-- Raccourcis à taper : // (fraction), sqrt (racine), ^^ (puissance), __ (indice), vec (vecteur), +- (±), <= (≤), >= (≥), != (≠), ~= (≈).
-- Ctrl+Alt+G : guidage visuel des formules. Ctrl+Alt+E : aligner les signes =.
-- Les formules sont insérées sans fenêtre, avec saut automatique vers le premier champ à remplir.
+- Panneau latéral avec gros boutons : opérations, gabarits (fraction, racine, puissance, système, intégrale, matrice...), géométrie, trigonométrie, ensembles.
+- Chaque raccourci a son bouton ; l'infobulle indique le raccourci configuré.
+- Tab / Maj+Tab pour passer d'un champ à l'autre dans une formule, Échap pour en sortir.
+- Étapes d'équation (Ctrl+Alt+Entrée), alignement des « = », guidage visuel, vérification d'une égalité.
+- Modèles de document (équation, problème, géométrie, fonction, calcul littéral, propriété).
+- Réglages : profils simple / standard / complet, gabarits et raccourcis activables, thème et taille.
 
 Nécessite LibreOffice 7.4 ou plus récent.
