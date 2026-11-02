@@ -2,13 +2,30 @@
 
 Extension LibreOffice Writer pour écrire les maths facilement (niveau 3e) : panneau latéral avec boutons, raccourcis clavier tapés au vol, guidage visuel des formules et alignement des « = ».
 
-Nécessite LibreOffice 7.4 ou plus récent.
+## Pourquoi ce projet
+
+Conçu sur mesure pour un élève de 3ᵉ avec un Trouble du Spectre de l'Autisme (TSA). Il remplace la saisie StarMath de LibreOffice (code à taper, fenêtre séparée) par une interface sans surcharge cognitive : on écrit les maths directement dans le texte, comme sur papier.
+
+- **Panneau latéral** : gros boutons, trois blocs repliables (Nombres & Opérations, Gabarits, Géométrie / Trigonométrie), infobulle sur chaque bouton avec l'action et son raccourci.
+- **Insertion au curseur** : fractions, racines, puissances, vecteurs… insérés comme objets Math dans le texte, sans fenêtre modale. Le gabarit est inséré vide et le curseur se place dans le premier champ.
+- **Guidage visuel** : un bouton colore légèrement le fond des formules pour guider le regard.
+- **Alignement des « = »** : un bouton aligne les signes « = » des lignes sélectionnées (résolution d'équations).
+
+## Prérequis
+
+- Windows 11 (fonctionne aussi sous Linux/macOS), LibreOffice **7.4 ou plus récent** avec Writer.
+- Aucun autre logiciel à installer pour l'élève.
 
 ## Installation (élève)
 
-1. Télécharger `plugin-maths.oxt` depuis la page [Releases](https://github.com/aifedespaix/plugin-maths/releases/latest).
-2. Double-cliquer sur le fichier (ou Outils > Gestionnaire d'extensions > Ajouter), accepter, puis redémarrer LibreOffice.
-3. Ouvrir un document Writer : le panneau « Maths » est dans la barre latérale (Affichage > Barre latérale).
+1. Télécharger `plugin-maths.oxt` depuis la page [Releases](https://github.com/aifedespaix/plugin-maths/releases/latest) (section « Assets »).
+2. Fermer LibreOffice, puis double-cliquer sur le fichier `.oxt` (ou, dans LibreOffice : Outils > Gestionnaire d'extensions > Ajouter…). Accepter la licence et choisir « Pour moi seulement ».
+3. Redémarrer LibreOffice et ouvrir un document Writer.
+4. Ouvrir la barre latérale (Affichage > Barre latérale, ou Ctrl+F5) et cliquer sur l'icône « Maths ».
+
+Pour désinstaller : Outils > Gestionnaire d'extensions > « Maths facile pour Writer » > Supprimer.
+
+Les mises à jour sont proposées automatiquement par LibreOffice (voir plus bas).
 
 Les mises à jour sont proposées automatiquement par LibreOffice (voir plus bas).
 
