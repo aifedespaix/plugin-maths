@@ -4,7 +4,7 @@
   "enabled": "all",
   "ui": {
     "scale": 1.0,
-    "theme": "clair",
+    "theme": "auto",
     "button_height": 40
   }
 }

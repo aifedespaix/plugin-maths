@@ -47,8 +47,16 @@ UIELEMENT_TYPE_TOOLPANEL = 7
 
 
 def _log_exc(where):
+    msg = "%s: %s" % (where, traceback.format_exc())
     try:
-        sys.stderr.write("[plugin-maths] %s: %s\n" % (where, traceback.format_exc()))
+        sys.stderr.write("[plugin-maths] %s\n" % msg)
+    except Exception:
+        pass
+    try:  # journal lisible sous Windows: %TEMP%\\plugin-maths.log
+        import tempfile
+        with open(os.path.join(tempfile.gettempdir(), "plugin-maths.log"), "a",
+                  encoding="utf-8") as f:
+            f.write(msg + "\n")
     except Exception:
         pass
 

@@ -84,6 +84,7 @@ _MODELS = {
 THEMES = {
     "clair": {"bg": 0xFFFFFF, "text": 0x1F2933, "btn": 0xE8EEF6, "tab_on": 0xC9D8EC},
     "doux": {"bg": 0xF6F0E1, "text": 0x3B3A36, "btn": 0xE9DFC6, "tab_on": 0xD9C9A0},
+    "sombre": {"bg": 0x2B2D31, "text": 0xE6E8EB, "btn": 0x3C3F46, "tab_on": 0x505560},
     "contraste": {"bg": 0x111111, "text": 0xFFFFFF, "btn": 0x2E2E2E, "tab_on": 0x55555F},
 }
 OK_COLOR = 0x2E7D32      # vert doux
@@ -93,6 +94,14 @@ KO_COLOR = 0xC2610C      # orange doux
 def _log(msg):
     try:
         sys.stderr.write("[plugin-maths] %s\n" % msg)
+    except Exception:
+        pass
+    try:  # journal lisible aussi sous Windows (stderr y est invisible)
+        import os
+        import tempfile
+        with open(os.path.join(tempfile.gettempdir(), "plugin-maths.log"), "a",
+                  encoding="utf-8") as f:
+            f.write("%s\n" % msg)
     except Exception:
         pass
 
@@ -162,9 +171,9 @@ def _ui_settings(cfg):
     except (TypeError, ValueError):
         bh = BTN_H
     bh = min(max(bh, 24.0), 120.0)
-    theme = ui.get("theme", "clair")
-    if theme not in THEMES:
-        theme = "clair"
+    theme = ui.get("theme", "auto")
+    if theme != "auto" and theme not in THEMES:
+        theme = "auto"
     return {"scale": scale, "button_height": bh, "theme": theme}
 
 
@@ -698,7 +707,7 @@ class PanelUI(object):
         cfg = self.cfg
         self._st = st = _ui_settings(cfg)
         sc = st["scale"]
-        th = THEMES[st["theme"]]
+        th = THEMES[self._resolve_theme(st["theme"])]
         try:
             _set(self._cmodel, "BackgroundColor", th["bg"])
         except Exception:
@@ -709,6 +718,34 @@ class PanelUI(object):
         self._apply_recents()
         for nb in self._notebooks:
             self._style_tabs(nb, th)
+
+    def _resolve_theme(self, name):
+        """'auto' -> 'sombre' ou 'clair' selon la couleur de fond de LibreOffice."""
+        if name != "auto":
+            return name
+        return "sombre" if self._system_is_dark() else "clair"
+
+    def _system_is_dark(self):
+        """Luminance de la couleur de fenetre du theme LibreOffice (StyleSettings)."""
+        cands = [self._parent]
+        try:
+            cands.append(self._parent.getContainerWindow())
+        except Exception:
+            pass
+        try:
+            desktop = self.ctx.getServiceManager().createInstanceWithContext(
+                "com.sun.star.frame.Desktop", self.ctx)
+            cands.append(desktop.getCurrentFrame().getContainerWindow())
+        except Exception:
+            pass
+        for w in cands:
+            try:
+                c = int(w.StyleSettings.WindowColor)
+                r, g, b = (c >> 16) & 255, (c >> 8) & 255, c & 255
+                return (0.299 * r + 0.587 * g + 0.114 * b) < 128
+            except Exception:
+                continue
+        return False
 
     def _style_leaf(self, leaf, st, th, sc):
         k = leaf.kind
@@ -810,7 +847,7 @@ class PanelUI(object):
     def _select_tab(self, nb, index):
         nb.active = index
         try:
-            self._style_tabs(nb, THEMES[self._st["theme"]])
+            self._style_tabs(nb, THEMES[self._resolve_theme(self._st["theme"])])
         except Exception:
             _log_exc("tabs")
         self.relayout()
@@ -882,7 +919,7 @@ class PanelUI(object):
         m = leaf.ctrl.getModel()
         _set(m, "Label", "" if text is None else str(text))
         if leaf.kind == "label":
-            _set(m, "TextColor", color if color is not None else THEMES[self._st["theme"]]["text"])
+            _set(m, "TextColor", color if color is not None else THEMES[self._resolve_theme(self._st["theme"])]["text"])
 
     def set_visible(self, wid, visible):
         leaf = self._by_id.get(wid)
