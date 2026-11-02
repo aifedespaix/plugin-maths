@@ -26,7 +26,7 @@ import xml.etree.ElementTree as ET
 
 try:
     import unohelper
-    from com.sun.star.awt import XActionListener, XWindowListener, XKeyListener
+    from com.sun.star.awt import XActionListener, XWindowListener, XKeyListener, XAdjustmentListener
     HAVE_UNO = True
 except Exception:  # hors LibreOffice (tests, py_compile)
     HAVE_UNO = False
@@ -47,6 +47,9 @@ except Exception:  # hors LibreOffice (tests, py_compile)
         pass
 
     class XKeyListener(object):
+        pass
+
+    class XAdjustmentListener(object):
         pass
 
 try:  # config.py est ecrit en parallele: jamais bloquant
@@ -70,6 +73,7 @@ TAB_H = 36
 POSSIZE_ALL = 15
 MIN_WIDTH = 180
 MAX_RECENT = 6
+SB_W = 16          # largeur de la barre de defilement
 
 _MODELS = {
     "button": "com.sun.star.awt.UnoControlButtonModel",
@@ -229,6 +233,20 @@ class _ResizeListener(unohelper.Base, XWindowListener):
 
     def windowHidden(self, ev):
         pass
+
+    def disposing(self, ev):
+        pass
+
+
+class _ScrollListener(unohelper.Base, XAdjustmentListener):
+    def __init__(self, callback):
+        self._cb = callback
+
+    def adjustmentValueChanged(self, ev):
+        try:
+            self._cb(int(ev.Value))
+        except Exception:
+            _log_exc("scroll")
 
     def disposing(self, ev):
         pass
@@ -661,6 +679,9 @@ class PanelUI(object):
         self._notebooks = []
         self._expanders = []
         self._composer = None
+        self._scroll = 0
+        self._sb = None
+        self._sb_listener = None
         self._listeners = []
         self._recent = []
         self._parent = parent_window
@@ -725,6 +746,34 @@ class PanelUI(object):
             self._parent.addWindowListener(self._resize_listener)
         except Exception:
             self._resize_listener = None
+        self._create_scrollbar()
+
+    def _create_scrollbar(self):
+        """Barre de defilement propre: la sidebar de LibreOffice ne defile pas ce panneau."""
+        try:
+            m = self._cmodel.createInstance("com.sun.star.awt.UnoControlScrollBarModel")
+            _set(m, "Orientation", 1)          # VERTICAL
+            _set(m, "LineIncrement", 40)
+            self._cmodel.insertByName("sb_scroll", m)
+            ctrl = self._container.getControl("sb_scroll")
+            if ctrl is None:
+                ctrl = self.ctx.getServiceManager().createInstanceWithContext(
+                    m.getPropertyValue("DefaultControl"), self.ctx)
+                ctrl.setModel(m)
+                self._container.addControl("sb_scroll", ctrl)
+            self._sb_listener = _ScrollListener(self._on_scroll)
+            ctrl.addAdjustmentListener(self._sb_listener)
+            ctrl.setVisible(False)
+            self._sb = ctrl
+        except Exception:
+            _log_exc("scrollbar")
+            self._sb = None
+
+    def _on_scroll(self, value):
+        value = max(int(value), 0)
+        if value != self._scroll:
+            self._scroll = value
+            self.relayout(keep_scroll=True)
 
     def _all_leaves(self):
         return [l for n in self._nodes for l in n.leaves()]
@@ -1131,28 +1180,70 @@ class PanelUI(object):
             w = max(int(r.Width), MIN_WIDTH)
         except Exception:
             return
-        if w != self.width:
-            self.width = w
-            self.relayout()
+        self.width = w
+        self.relayout()
 
-    def relayout(self, width=None):
-        """Recalcule les positions; retourne la hauteur totale (px)."""
+    def _viewport(self):
+        """Hauteur reellement accordee au panneau par LibreOffice (None = inconnue)."""
+        try:
+            h = int(self._parent.getPosSize().Height)
+            return h if h > 120 else None
+        except Exception:
+            return None
+
+    def _layout_nodes(self, width, y0):
+        """Place les noeuds en partant de y0; retourne la hauteur du contenu."""
+        y = PAD + y0
+        for n in self._nodes:
+            h = n.place(PAD, y, width - 2 * PAD, True)
+            if h > 0:
+                y += h + GAP
+        return max(y + PAD - GAP - y0, 2 * PAD)
+
+    def relayout(self, width=None, keep_scroll=False):
+        """Recalcule les positions (avec defilement); retourne la hauteur du contenu (px)."""
         if self._disposed:
             return self.height
         try:
             if width:
                 self.width = max(int(width), MIN_WIDTH)
-            y = PAD
-            for n in self._nodes:
-                h = n.place(PAD, y, self.width - 2 * PAD, True)
-                if h > 0:
-                    y += h + GAP
-            self.height = max(y + PAD - GAP, 2 * PAD)
+            vp = self._viewport()
+            inner = self.width
+            h = self._layout_nodes(inner, -self._scroll)
+            need = vp is not None and h > vp
+            if need:
+                inner = self.width - SB_W
+                h = self._layout_nodes(inner, -self._scroll)
+            maxscroll = max(h - vp, 0) if need else 0
+            if self._scroll > maxscroll:
+                self._scroll = maxscroll
+                h = self._layout_nodes(inner, -self._scroll)
+            self.height = h
             if self.window is not None:
-                self.window.setPosSize(0, 0, self.width, self.height, POSSIZE_ALL)
+                self.window.setPosSize(0, 0, self.width, vp if vp else h, POSSIZE_ALL)
+            self._update_scrollbar(need, vp, h, keep_scroll)
         except Exception:
             _log_exc("relayout")
         return self.height
+
+    def _update_scrollbar(self, need, vp, h, keep_scroll):
+        sb = self._sb
+        if sb is None:
+            return
+        try:
+            if not need:
+                sb.setVisible(False)
+                return
+            sb.setPosSize(self.width - SB_W, 0, SB_W, vp, POSSIZE_ALL)
+            if not keep_scroll:
+                m = sb.getModel()
+                _set(m, "ScrollValueMax", int(h))
+                _set(m, "VisibleSize", int(vp))
+                _set(m, "BlockIncrement", int(vp * 0.9))
+                _set(m, "ScrollValue", int(self._scroll))
+            sb.setVisible(True)
+        except Exception:
+            _log_exc("update scrollbar")
 
     def height_for_width(self, width):
         return self.relayout(width)
@@ -1196,6 +1287,11 @@ class PanelUI(object):
             self._cfg_cb = None
             if self._resize_listener is not None:
                 self._parent.removeWindowListener(self._resize_listener)
+            if self._sb is not None and self._sb_listener is not None:
+                try:
+                    self._sb.removeAdjustmentListener(self._sb_listener)
+                except Exception:
+                    pass
             for ctrl, lis in self._listeners:
                 try:
                     ctrl.removeActionListener(lis)
