@@ -182,7 +182,10 @@ def _cursor_after(controller, obj):
     """Place le curseur de vue juste après l'objet ancré comme caractère."""
     try:
         anchor = obj.getAnchor()
-        cur = anchor.getText().createTextCursorByRange(anchor.getEnd())
+        # L'ancre d'un objet "comme caractere" peut etre reduite au point AVANT
+        # ce caractere: on part de son debut et on avance d'un caractere.
+        cur = anchor.getText().createTextCursorByRange(anchor.getStart())
+        cur.goRight(1, False)
         controller.getViewCursor().gotoRange(cur.getEnd(), False)
     except Exception:
         log_exception("_cursor_after")

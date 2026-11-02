@@ -164,6 +164,33 @@ def _current_writer_doc(ctx):
     return None
 
 
+def selected_text(ctx):
+    """Texte selectionne dans le document Writer actif ('' sinon)."""
+    try:
+        doc = _current_writer_doc(ctx)
+        return _selected_text(doc) if doc is not None else ""
+    except Exception:
+        return ""
+
+
+def insert_formula(ctx, action_id, formula):
+    """Insere une formule StarMath deja composee (bloc formule du panneau).
+
+    Formule complete: elle est posee et le curseur revient dans le texte, apres
+    elle. Champs encore vides (``<?>``): on entre dans l'editeur Math (Tab & Go).
+    """
+    try:
+        doc = _current_writer_doc(ctx)
+        if doc is None or math_insert is None:
+            return
+        math_insert.insert_math(doc, formula, tab_and_go="<?>" in formula)
+        if config:
+            config.push_recent(action_id)
+        math_insert.focus_active_frame(doc)
+    except Exception:
+        _log("insert_formula(%s)" % action_id)
+
+
 def dispatch(ctx, action_id, params=None):
     """Point d'entrée de la sidebar : agit sur le document Writer courant."""
     try:

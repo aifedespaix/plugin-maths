@@ -67,6 +67,11 @@
       </object>
     </child>
     <child>
+      <object class="GtkBox" id="composer">
+        <property name="visible">True</property>
+      </object>
+    </child>
+    <child>
       <object class="GtkBox" id="recents">
         <property name="visible">True</property>
         <property name="orientation">vertical</property>

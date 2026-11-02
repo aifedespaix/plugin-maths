@@ -103,8 +103,40 @@ class MathsPanel(unohelper.Base, XSidebarPanel, XUIElement, XToolPanel):
         except Exception:
             _log_exc("sync guide")
 
+    def _composer_action(self, action_id, values):
+        """Bloc formule: ouvre / valide / annule. Retourne True si traite."""
+        if self.ui is None:
+            return False
+        import composer
+        if action_id == "composer_cancel":
+            self.ui.close_composer()
+            self._request_layout()
+            return True
+        if action_id == "composer_ok":
+            import actions
+            cid = self.ui.composer_id
+            if cid:
+                formula = composer.build(cid, self.ui.composer_values())
+                self.ui.close_composer()
+                actions.insert_formula(self.ctx, cid, formula)
+            self._after_action(action_id, None)
+            return True
+        spec = composer.spec_for(action_id)
+        if spec is None:
+            return False
+        import actions
+        if self.ui.open_composer(spec, actions.selected_text(self.ctx)):
+            self._request_layout()
+            return True
+        return False
+
     def _on_action(self, action_id, values=None):
         result = None
+        try:
+            if self._composer_action(action_id, values):
+                return
+        except Exception:
+            _log_exc("composer " + str(action_id))
         try:
             import actions
             try:

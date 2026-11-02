@@ -26,7 +26,7 @@ import xml.etree.ElementTree as ET
 
 try:
     import unohelper
-    from com.sun.star.awt import XActionListener, XWindowListener
+    from com.sun.star.awt import XActionListener, XWindowListener, XKeyListener
     HAVE_UNO = True
 except Exception:  # hors LibreOffice (tests, py_compile)
     HAVE_UNO = False
@@ -44,6 +44,9 @@ except Exception:  # hors LibreOffice (tests, py_compile)
         pass
 
     class XWindowListener(object):
+        pass
+
+    class XKeyListener(object):
         pass
 
 try:  # config.py est ecrit en parallele: jamais bloquant
@@ -231,6 +234,26 @@ class _ResizeListener(unohelper.Base, XWindowListener):
         pass
 
 
+class _KeyListener(unohelper.Base, XKeyListener):
+    """Entree dans un champ du bloc formule: champ suivant / validation."""
+
+    def __init__(self, callback):
+        self._cb = callback
+
+    def keyPressed(self, ev):
+        try:
+            if ev.KeyCode == 1280:  # com.sun.star.awt.Key.RETURN
+                self._cb()
+        except Exception:
+            _log_exc("key")
+
+    def keyReleased(self, ev):
+        pass
+
+    def disposing(self, ev):
+        pass
+
+
 # ------------------------------------------------------------- layout nodes
 class _Leaf(object):
     """Un controle UNO. ``user_hidden`` (set_visible) et ``cfg_hidden`` (config)."""
@@ -244,6 +267,8 @@ class _Leaf(object):
         self.cfg_hidden = False
         self.color = None          # couleur de texte imposee (resultat verif)
         self.wrap = False
+        self.big = False           # symbole du bloc formule (grande police)
+        self.center = False
         self.ctrl = None
         self.col, self.row = 0, 0
 
@@ -389,6 +414,91 @@ class _Notebook(object):
         return cy - y
 
 
+class _Composer(object):
+    """Bloc formule WYSIWYG: champs disposes comme la formule finale."""
+    col, row = 0, 0
+    N_FIELDS, N_SYMS = 4, 5
+
+    def __init__(self, counter):
+        self.open = False
+        self.cfg = None
+        self.title = _Leaf("label", "lbl_c_title", "", "", 22)
+        self.fields = [_Leaf("entry", "ent_c%d" % i, "", "", FIELD_H)
+                       for i in range(self.N_FIELDS)]
+        self.syms = [_Leaf("label", "lbl_c_s%d" % i, "", "", 30)
+                     for i in range(self.N_SYMS)]
+        self.caps = [_Leaf("label", "lbl_c_k%d" % i, "", "", 18)
+                     for i in range(self.N_FIELDS)]
+        for sy in self.syms:
+            sy.big = True
+            sy.center = True
+        self.line = _Leaf("separator", "sep_c_line", "", "", SEP_H)
+        self.ok = _Leaf("button", "btn_composer_ok", "Insérer  ↵",
+                        "Insérer la formule dans le texte [ Entrée ]", 40)
+        self.cancel = _Leaf("button", "btn_composer_cancel", "✕", "Annuler", 40)
+
+    def leaves(self):
+        return ([self.title] + self.fields + self.syms + self.caps +
+                [self.line, self.ok, self.cancel])
+
+    def has_visible(self):
+        return self.open
+
+    def place(self, x, y, w, visible):
+        placed = []
+
+        def put(leaf, lx, ly, lw):
+            placed.append(leaf)
+            return leaf.place(lx, ly, lw, True)
+
+        cy = y
+        if self.open and visible and self.cfg:
+            c = self.cfg
+            shape, n = c["shape"], c["fields"]
+            cy += put(self.title, x, cy, w) + GAP
+            if shape == "frac":
+                fw = int(w * 0.8)
+                fx = x + (w - fw) / 2.0
+                cy += put(self.fields[0], fx, cy, fw) + GAP
+                cy += put(self.line, x + PAD, cy, w - 2 * PAD) + GAP
+                cy += put(self.fields[1], fx, cy, fw) + GAP
+            elif shape == "inline":
+                toks = c["tokens"]
+                tw = [max(20, 11 * len(t[1])) if t[0] == "t" else 0 for t in toks]
+                nf = max(sum(1 for t in toks if t[0] == "f"), 1)
+                fw = max((w - sum(tw) - GAP * (len(toks) - 1)) / float(nf), 40)
+                rowh = self.fields[0].height
+                lx, si = x, 0
+                for t, wt in zip(toks, tw):
+                    if t[0] == "t":
+                        sy = self.syms[si]
+                        si += 1
+                        put(sy, lx, cy + (rowh - sy.height) / 2.0, wt)
+                        lx += wt + GAP
+                    else:
+                        put(self.fields[t[1]], lx, cy, fw)
+                        lx += fw + GAP
+                cy += rowh + GAP
+            elif shape == "rows":
+                for i in range(n):
+                    cy += put(self.caps[i], x, cy, w)
+                    cy += put(self.fields[i], x, cy, w) + GAP
+            else:  # grid2
+                cw = (w - GAP) / 2.0
+                for i in range(n):
+                    put(self.fields[i], x + (i % 2) * (cw + GAP), cy, cw)
+                    if i % 2 == 1 or i == n - 1:
+                        cy += self.fields[i].height + GAP
+            okw = int(w * 0.7)
+            put(self.ok, x, cy, okw)
+            put(self.cancel, x + okw + GAP, cy, w - okw - GAP)
+            cy += self.ok.height
+        for leaf in self.leaves():
+            if leaf not in placed:
+                leaf.place(0, 0, 1, False)
+        return max(cy - y, 0)
+
+
 # ------------------------------------------------------------------- parsing
 def _props(obj):
     out = {}
@@ -424,6 +534,8 @@ def _build(obj, counter):
     if _is_false(pr.get("visible", "True")):
         return None
     tip = pr.get("tooltip_text", "")
+    if wid == "composer":
+        return _Composer(counter)
     if cls in ("GtkButton", "GtkToggleButton"):
         if not wid:
             return None
@@ -548,6 +660,7 @@ class PanelUI(object):
         self._by_id = {}
         self._notebooks = []
         self._expanders = []
+        self._composer = None
         self._listeners = []
         self._recent = []
         self._parent = parent_window
@@ -574,6 +687,8 @@ class PanelUI(object):
                 self._notebooks.append(n)
                 for p in n.pages:
                     walk(p)
+            elif isinstance(n, _Composer):
+                self._composer = n
             elif isinstance(n, _Expander):
                 self._expanders.append(n)
                 walk(n.body)
@@ -657,6 +772,8 @@ class PanelUI(object):
             _set(m, "Label", leaf.label)
         if k == "label" and leaf.wrap:
             _set(m, "MultiLine", True)
+        if k == "label" and leaf.center:
+            _set(m, "Align", 1)
         if k == "check":
             _set(m, "State", 1 if leaf.checked else 0)
         if k == "toggle":
@@ -678,6 +795,13 @@ class PanelUI(object):
             ctrl.setModel(m)
             self._container.addControl(leaf.wid, ctrl)
         leaf.ctrl = ctrl
+        if k == "entry" and leaf.wid.startswith("ent_c"):
+            try:
+                kl = _KeyListener(lambda w=leaf.wid: self._on_composer_enter(w))
+                ctrl.addKeyListener(kl)
+                self._listeners.append((ctrl, kl))
+            except Exception:
+                _log_exc("key listener")
         if k == "header":
             cb = (lambda e=expander: self._toggle(e))
         elif k == "tab":
@@ -780,7 +904,7 @@ class PanelUI(object):
             _set(m, "TextColor", th["text"])
         elif k == "label":
             leaf.height = int(round(leaf.base_height * sc))
-            self._font(m, 10.5 * sc)
+            self._font(m, (17.0 if leaf.big else 10.5) * sc, bold=leaf.big)
             _set(m, "BackgroundColor", th["bg"])
             _set(m, "TextColor", leaf.color if leaf.color is not None else th["text"])
         elif k == "check":
@@ -869,6 +993,68 @@ class PanelUI(object):
                 self.on_layout_changed()
             except Exception:
                 _log_exc("on_layout_changed")
+
+    # -- bloc formule
+    @property
+    def composer_id(self):
+        node = self._composer
+        return node.cfg["id"] if node is not None and node.open and node.cfg else None
+
+    def open_composer(self, cfg, prefill=""):
+        """Affiche le bloc formule decrit par ``cfg`` (voir composer.spec_for)."""
+        node = self._composer
+        if node is None or self._disposed:
+            return False
+        try:
+            node.cfg, node.open = cfg, True
+            self.set_text("lbl_c_title", cfg.get("title", ""))
+            for i, f in enumerate(node.fields):
+                self.set_value(f.wid, prefill if i == 0 else "")
+            si = 0
+            for t in cfg.get("tokens", []):
+                if t[0] == "t":
+                    self.set_text("lbl_c_s%d" % si, t[1])
+                    si += 1
+            for i, cap in enumerate(cfg.get("captions", [])):
+                self.set_text("lbl_c_k%d" % i, cap)
+            self.relayout()
+            self._notify_layout()
+            self.focus_field(0)
+            return True
+        except Exception:
+            _log_exc("open_composer")
+            return False
+
+    def close_composer(self):
+        node = self._composer
+        if node is None:
+            return
+        node.open = False
+        self.relayout()
+        self._notify_layout()
+
+    def composer_values(self):
+        node = self._composer
+        if node is None or not node.cfg:
+            return []
+        return [self.get_value(f.wid) or "" for f in node.fields[:node.cfg["fields"]]]
+
+    def focus_field(self, index):
+        try:
+            self._composer.fields[index].ctrl.setFocus()
+        except Exception:
+            _log_exc("focus_field")
+
+    def _on_composer_enter(self, wid):
+        """Entree: champ suivant, ou validation sur le dernier champ."""
+        node = self._composer
+        if node is None or not node.open:
+            return
+        idx = _int(wid[len("ent_c"):], 0)
+        if idx + 1 < node.cfg["fields"]:
+            self.focus_field(idx + 1)
+        else:
+            self._fire("composer_ok")
 
     # -- API valeurs
     def get_value(self, wid):

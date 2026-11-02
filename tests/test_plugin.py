@@ -190,3 +190,29 @@ class PackagingTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ComposerTests(unittest.TestCase):
+    def test_fraction(self):
+        import composer
+        self.assertEqual(composer.build("fraction", ["3", "4"]), "{3} over {4}")
+
+    def test_champ_vide_reste_marqueur(self):
+        import composer
+        self.assertEqual(composer.build("fraction", ["3", ""]), "{3} over {<?>}")
+
+    def test_normalisation(self):
+        import composer
+        self.assertEqual(composer.build("power", ["2*x", "3"]), "{2 times x} ^ {3}")
+
+    def test_specs_coherentes(self):
+        import composer
+        for aid in composer.SPECS:
+            sp = composer.spec_for(aid)
+            self.assertIsNotNone(sp, aid)
+            fields = {t[1] for t in sp["tokens"] if t[0] == "f"}
+            if sp["shape"] == "inline":
+                self.assertEqual(fields, set(range(sp["fields"])), aid)
+            if sp["shape"] == "rows":
+                self.assertEqual(len(sp["captions"]), sp["fields"], aid)
+            self.assertEqual(composer.build(aid, [""] * 4).count("<?>"), sp["fields"])
