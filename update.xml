@@ -4,7 +4,7 @@
   <identifier value="fr.aifedespaix.plugin-maths"/>
   <version value="0.2.0"/>
   <dependencies>
-    <LibreOffice-minimal-version value="7.4" d:name="LibreOffice 7.4" xmlns:d="http://openoffice.org/extensions/description/2006"/>
+    <OpenOffice.org-minimal-version value="4.1" d:name="OpenOffice.org 4.1" xmlns:d="http://openoffice.org/extensions/description/2006"/>
   </dependencies>
   <update-download>
     <src xlink:href="https://github.com/aifedespaix/plugin-maths/releases/download/v0.2.0/plugin-maths.oxt"/>

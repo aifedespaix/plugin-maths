@@ -8,7 +8,6 @@
   </icon>
   <dependencies>
     <OpenOffice.org-minimal-version value="4.1" d:name="OpenOffice.org 4.1" xmlns:d="http://openoffice.org/extensions/description/2006"/>
-    <LibreOffice-minimal-version value="7.4" d:name="LibreOffice 7.4" xmlns:d="http://openoffice.org/extensions/description/2006"/>
   </dependencies>
   <display-name>
     <name lang="fr">Maths facile pour Writer</name>
@@ -22,6 +21,7 @@
   <registration>
     <simple-license accept-by="admin" default-license-id="fr" suppress-on-update="true">
       <license-text xlink:href="registration/license_fr.txt" lang="fr"/>
+      <license-text xlink:href="registration/license_fr.txt" lang="en"/>
     </simple-license>
   </registration>
   <update-information>
