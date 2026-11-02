@@ -1,10 +1,10 @@
 # plugin-maths
 
-Extension LibreOffice Writer pour écrire les maths facilement (niveau 3e) : panneau latéral avec boutons, raccourcis clavier tapés au vol, guidage visuel des formules et alignement des « = ».
+Extension LibreOffice Writer pour écrire les maths facilement sur ordinateur : panneau latéral avec boutons, raccourcis clavier tapés au vol, guidage visuel des formules et alignement des « = ».
 
 ## Pourquoi ce projet
 
-Conçu sur mesure pour un élève de 3ᵉ avec un Trouble du Spectre de l'Autisme (TSA). Il remplace la saisie StarMath de LibreOffice (code à taper, fenêtre séparée) par une interface sans surcharge cognitive : on écrit les maths directement dans le texte, comme sur papier.
+Conçu pour aider les élèves qui travaillent sur PC à retrouver l'aisance du papier. Il remplace la saisie StarMath de LibreOffice (code à taper, fenêtre séparée) par une interface simple et sans surcharge : on écrit les maths directement dans le texte, comme sur une feuille.
 
 - **Panneau latéral** : gros boutons, trois blocs repliables (Nombres & Opérations, Gabarits, Géométrie / Trigonométrie), infobulle sur chaque bouton avec l'action et son raccourci.
 - **Insertion au curseur** : fractions, racines, puissances, vecteurs… insérés comme objets Math dans le texte, sans fenêtre modale. Le gabarit est inséré vide et le curseur se place dans le premier champ.
